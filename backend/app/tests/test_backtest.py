@@ -208,6 +208,37 @@ def bisect_len(sorted_positions, as_of_ts):
     return _bisect.bisect_right([p.timestamp for p in sorted_positions], as_of_ts)
 
 
+def test_bulk_wallet_positions_as_of_ts_excludes_later_closes_but_keeps_earlier_ones():
+    """The as_of_ts bound (added for a real, measured speed win -- a backtest
+    never needs a wallet's positions closed after its last checkpoint) must
+    exclude everything after the bound while including everything at/before
+    it, exactly matching what an unbounded load sliced with a bisect would
+    give -- a caller must never see a DIFFERENT result, only fewer wasted
+    rows loaded to get it."""
+    conn = _make_conn()
+    conn.execute(
+        "INSERT INTO backtest_wallet_positions (wallet, condition_id, avg_price, total_bought, "
+        "realized_pnl, cur_price, timestamp) VALUES ('0xa', 'c1', 0.5, 100, 10, 1.0, ?)", (NOW,),
+    )
+    conn.execute(
+        "INSERT INTO backtest_wallet_positions (wallet, condition_id, avg_price, total_bought, "
+        "realized_pnl, cur_price, timestamp) VALUES ('0xa', 'c2', 0.5, 100, 10, 1.0, ?)", (NOW + DAY,),
+    )
+    conn.execute(
+        "INSERT INTO backtest_wallet_positions (wallet, condition_id, avg_price, total_bought, "
+        "realized_pnl, cur_price, timestamp) VALUES ('0xa', 'c3', 0.5, 100, 10, 1.0, ?)", (NOW + 30 * DAY,),
+    )
+    conn.commit()
+
+    unbounded = bulk_wallet_positions(conn, ["0xa"])
+    bounded = bulk_wallet_positions(conn, ["0xa"], as_of_ts=NOW + DAY)
+
+    assert len(unbounded["0xa"]) == 3          # nothing filtered without a bound
+    assert len(bounded["0xa"]) == 2            # the +30 day position excluded
+    assert {p.timestamp for p in bounded["0xa"]} == {NOW, NOW + DAY}  # boundary is inclusive
+    conn.close()
+
+
 def test_bulk_fetch_status_matches_individual_lookups():
     conn = _make_conn()
     conn.execute("INSERT INTO backtest_wallet_sync (wallet, synced_at, fetch_status) VALUES ('0xa', ?, 'ok')", (NOW,))

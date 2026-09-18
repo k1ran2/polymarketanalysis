@@ -446,21 +446,41 @@ def price_at_or_before_series(
     return None
 
 
-def bulk_wallet_positions(conn, wallets: list) -> dict:
+def bulk_wallet_positions(conn, wallets: list, as_of_ts: Optional[int] = None) -> dict:
     """{wallet: [ClosedPosition, ...]} sorted by timestamp ascending, for
     every wallet in `wallets`, in ONE query -- pairs with a bisect on each
     wallet's list to get the no-lookahead prefix as-of any timestamp,
-    instead of one wallet_positions_asof() query per wallet per checkpoint."""
+    instead of one wallet_positions_asof() query per wallet per checkpoint.
+
+    `as_of_ts`, when given, excludes any position closed after it -- a
+    backtest's caller passes its LAST checkpoint here, since no checkpoint
+    can ever need a position that closed later (see bisect_right against
+    each wallet's prefix in _holders_at_fast). This isn't just skipping
+    unreachable rows in Python: a wallet's cache keeps accumulating new
+    closed positions long after any given historical market resolved
+    (measured on this project's real DB: 84-94% of a wallet's cached rows
+    postdate an older market's last checkpoint), and the WHERE clause turns
+    that into an index range restriction (backtest_wallet_positions has a
+    (wallet, timestamp) index), so SQLite skips those rows' B-tree pages
+    entirely rather than fetching-then-discarding them. Optional and
+    default-None so any other caller (or a wallet_positions_asof-style
+    single lookup with no timestamp anchor) is unaffected."""
     uniq = list(dict.fromkeys(wallets))
     out: dict = {w: [] for w in uniq}
     if not uniq:
         return out
-    rows = conn.execute(
-        "SELECT * FROM backtest_wallet_positions WHERE wallet IN ({}) ORDER BY wallet, timestamp ASC".format(
+    if as_of_ts is not None:
+        query = (
+            "SELECT * FROM backtest_wallet_positions WHERE wallet IN ({}) AND timestamp<=? "
+            "ORDER BY wallet, timestamp ASC".format(",".join("?" * len(uniq)))
+        )
+        args = tuple(uniq) + (as_of_ts,)
+    else:
+        query = "SELECT * FROM backtest_wallet_positions WHERE wallet IN ({}) ORDER BY wallet, timestamp ASC".format(
             ",".join("?" * len(uniq))
-        ),
-        tuple(uniq),
-    ).fetchall()
+        )
+        args = tuple(uniq)
+    rows = conn.execute(query, args).fetchall()
     for r in rows:
         out[r["wallet"]].append(ClosedPosition(
             wallet=r["wallet"], condition_id=r["condition_id"], avg_price=r["avg_price"],

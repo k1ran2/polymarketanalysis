@@ -515,7 +515,15 @@ def _backtest_one_market(run_id: str, condition_id: str, params: dict):
         price_timestamps_by_token = {tok: [t for t, _ in s] for tok, s in price_series_by_token.items()}
         by_checkpoint, first_seen = bulk_share_timeline(conn, condition_id, checkpoints)
         all_wallets = list({w for (w, _outcome) in first_seen.keys()})
-        positions_by_wallet = bulk_wallet_positions(conn, all_wallets)
+        # No checkpoint can ever need a wallet position closed after the LAST
+        # checkpoint (see _holders_at_fast's bisect against this same prefix)
+        # -- bounding the load avoids fetching a wallet's entire subsequent
+        # trading history for no reason (measured on this project's real DB:
+        # 84-94% of a wallet's cached rows postdate an older market's last
+        # checkpoint, since the cache keeps accumulating long after any given
+        # historical market resolved).
+        last_checkpoint = checkpoints[-1] if checkpoints else now_ts
+        positions_by_wallet = bulk_wallet_positions(conn, all_wallets, as_of_ts=last_checkpoint)
         positions_ts_by_wallet = {w: [p.timestamp for p in plist] for w, plist in positions_by_wallet.items()}
         fetch_status_by_wallet = bulk_fetch_status(conn, all_wallets)
         raw_stats_cache: dict = {}
