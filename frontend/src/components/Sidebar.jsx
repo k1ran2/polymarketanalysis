@@ -14,6 +14,10 @@ const NAV_GROUPS = [
     label: "Strategy",
     items: [{ id: "backtest", label: "Backtest" }],
   },
+  {
+    label: "Live",
+    items: [{ id: "trading", label: "Trading" }],
+  },
 ];
 
 export default function Sidebar({ tab, onSwitch }) {

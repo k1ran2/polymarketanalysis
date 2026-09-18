@@ -21,6 +21,54 @@ function postJSON(path, body) {
   });
 }
 
+// The /api/trading/* local-access token -- see backend/app/local_auth.py's
+// module docstring for why this exists (CORS alone doesn't stop a request
+// from another webpage open in the same browser from reaching this server).
+// Stored per-browser in localStorage; the user pastes it in once from the
+// backend's startup console output.
+const LOCAL_TOKEN_KEY = "polymarket_dashboard_local_token";
+
+export function getLocalToken() {
+  try {
+    return localStorage.getItem(LOCAL_TOKEN_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+export function setLocalToken(token) {
+  try {
+    localStorage.setItem(LOCAL_TOKEN_KEY, token);
+  } catch {
+    // ignore -- private browsing / storage blocked; the token just won't persist
+  }
+}
+
+async function tradingRequest(path, options = {}) {
+  const headers = { ...(options.headers || {}), "X-Local-Token": getLocalToken() };
+  return request(path, { ...options, headers });
+}
+
+function tradingGet(path) {
+  return tradingRequest(path);
+}
+
+function tradingPost(path, body) {
+  return tradingRequest(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body ?? {}),
+  });
+}
+
+function tradingPut(path, body) {
+  return tradingRequest(path, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body ?? {}),
+  });
+}
+
 export function fetchMarkets({ category, minVolume, sortBy = "conviction", limit = 50 } = {}) {
   const params = new URLSearchParams();
   if (category) params.set("category", category);
@@ -108,4 +156,50 @@ export function fetchBacktestSearch(searchId) {
 
 export function fetchBacktestSearches(limit = 20) {
   return getJSON(`/api/backtest/searches?limit=${limit}`);
+}
+
+// --- Live trading (mock mode -- see backend/app/trade_watcher.py) ---------
+
+export function fetchTradingStatus() {
+  return tradingGet(`/api/trading/status`);
+}
+
+export function fetchTradingSettings() {
+  return tradingGet(`/api/trading/settings`);
+}
+
+export function saveTradingSettings(body) {
+  return tradingPut(`/api/trading/settings`, body);
+}
+
+export function pauseTrading() {
+  return tradingPost(`/api/trading/pause`);
+}
+
+export function resumeTrading() {
+  return tradingPost(`/api/trading/resume`);
+}
+
+export function scanTradingNow() {
+  return tradingPost(`/api/trading/scan-now`);
+}
+
+export function fetchTradingSignals(limit = 50) {
+  return tradingGet(`/api/trading/signals?limit=${limit}`);
+}
+
+export function fetchTrades({ status, source, limit = 100 } = {}) {
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+  if (source) params.set("source", source);
+  params.set("limit", String(limit));
+  return tradingGet(`/api/trading/trades?${params.toString()}`);
+}
+
+export function logManualTrade(body) {
+  return tradingPost(`/api/trading/trades`, body);
+}
+
+export function fetchTradingPerformance() {
+  return tradingGet(`/api/trading/performance`);
 }

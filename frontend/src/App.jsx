@@ -4,12 +4,13 @@ import MarketDetail from "./pages/MarketDetail";
 import InsidersPage from "./pages/InsidersPage";
 import BacktestPage from "./pages/BacktestPage";
 import OverviewPage from "./pages/OverviewPage";
+import TradingPage from "./pages/TradingPage";
 import Sidebar from "./components/Sidebar";
 import TopBar from "./components/TopBar";
 import Disclaimer from "./components/Disclaimer";
 import "./App.css";
 
-const TABS = ["overview", "markets", "insiders", "backtest"];
+const TABS = ["overview", "markets", "insiders", "backtest", "trading"];
 
 function stateFromUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -70,6 +71,8 @@ export default function App() {
             <InsidersPage onOpenMarket={openMarket} />
           ) : tab === "backtest" ? (
             <BacktestPage />
+          ) : tab === "trading" ? (
+            <TradingPage />
           ) : tab === "markets" ? (
             <MarketList onOpenMarket={openMarket} />
           ) : (
