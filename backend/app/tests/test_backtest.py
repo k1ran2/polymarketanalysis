@@ -404,6 +404,58 @@ def test_checkpoints_downsample_instead_of_truncate_for_very_long_markets():
     assert points[-1] > NOW + 300 * DAY
 
 
+def test_checkpoints_downsampling_reaches_within_one_step_of_the_true_end():
+    """Real bug, fixed this session: the naive even-stride downsample
+    (int(i * len(points)/N)) never actually lands on the final index -- for
+    a 400-day market at the 6h default interval (1600 raw points -> 200),
+    the old code's last pick was checkpoint 1597 of 1599, silently dropping
+    the final ~6 days. The fix must reach the actual last raw checkpoint,
+    not just "well into" the market's life."""
+    market = BacktestMarket(
+        condition_id="c1", question=None, slug=None, category=None, clob_token_ids=["t1", "t2"],
+        volume=0.0, start_ts=NOW, end_ts=NOW + 400 * DAY, resolved_ts=NOW + 400 * DAY, resolved_yes=True,
+    )
+    step = int(cfg.BACKTEST.default_checkpoint_hours * 3600)
+    true_last_raw_checkpoint = NOW + ((400 * DAY - 1) // step) * step  # last point range(start, end, step) would emit
+
+    points = _build_checkpoints(market)
+    assert points[-1] == true_last_raw_checkpoint
+
+
+def test_evenly_spaced_indices_always_includes_the_last_index():
+    from app.backtest_engine import _evenly_spaced_indices
+    for n_total, n_wanted in [(500, 200), (1600, 200), (356, 16), (1599, 16), (17, 16), (200, 199)]:
+        indices = _evenly_spaced_indices(n_total, n_wanted)
+        assert indices[-1] == n_total - 1, f"n_total={n_total} n_wanted={n_wanted}"
+
+
+def test_evenly_spaced_indices_is_strictly_increasing_with_no_duplicates():
+    from app.backtest_engine import _evenly_spaced_indices
+    for n_total, n_wanted in [(500, 200), (1600, 200), (356, 16), (1599, 16)]:
+        indices = _evenly_spaced_indices(n_total, n_wanted)
+        assert indices == sorted(set(indices))
+
+
+def test_evenly_spaced_indices_stays_in_range():
+    from app.backtest_engine import _evenly_spaced_indices
+    indices = _evenly_spaced_indices(500, 200)
+    assert all(0 <= i < 500 for i in indices)
+    assert indices[0] == 0
+
+
+def test_evenly_spaced_indices_returns_everything_when_fewer_total_than_wanted():
+    from app.backtest_engine import _evenly_spaced_indices
+    assert _evenly_spaced_indices(10, 200) == list(range(10))
+
+
+def test_evenly_spaced_indices_handles_degenerate_sizes():
+    from app.backtest_engine import _evenly_spaced_indices
+    assert _evenly_spaced_indices(0, 200) == []
+    assert _evenly_spaced_indices(1, 200) == [0]
+    assert _evenly_spaced_indices(500, 1) == [499]
+    assert _evenly_spaced_indices(500, 0) == [499]
+
+
 # ---------------------------------------------------------------------------
 # _parse_verdict_side -- MarketVerdict label -> (side, strength)
 # ---------------------------------------------------------------------------

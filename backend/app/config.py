@@ -344,9 +344,26 @@ class BacktestConfig:
     # up to max_checkpoints_per_market (200) checkpoints for this made the
     # UNION of "top 40 at that moment" balloon back up to 100-200+ distinct
     # wallets for a market with real holder turnover -- almost as bad as not
-    # reducing the wallet set at all. A wallet's rank rarely flips between
-    # adjacent 6-hour checkpoints, so far fewer discovery samples still
-    # finds nearly the same set of wallets that ever mattered.
+    # reducing the wallet set at all.
+    #
+    # The real tradeoff, stated accurately (an earlier version of this
+    # comment claimed samples land on "adjacent 6-hour checkpoints", which
+    # was never true -- 16 samples spread over up to 200 checkpoints are
+    # themselves ~12 checkpoints, i.e. ~3 days, apart): a wallet that puts
+    # on a large position and holds it is very likely caught at the NEXT
+    # sample regardless of gap size, since the position is still there.
+    # The real risk is a large position taken late and never sampled at all
+    # before the market resolves -- exactly the insider profile this
+    # detector exists to catch. bulk_share_timeline/_evenly_spaced_indices
+    # guarantee the market's FINAL checkpoint is always one of the 16
+    # samples (a real bug fixed this session: the naive even-stride pick
+    # used to silently drop the last ~1% of a long market's checkpoints,
+    # which for a 455-day market was the final 2.25 days), which closes the
+    # single highest-value gap without needing more samples. Increasing
+    # this further is a real lever for reducing GENERAL mid-life gaps if a
+    # future audit finds that still costs real signals, at a proportional
+    # increase in per-market compute (no extra network cost either way --
+    # this is a purely local pass over already-cached data).
     wallet_discovery_checkpoints: int = 16
     # GLOBAL cap (backtest_engine._data_api_inflight) on concurrent Data API
     # /closed-positions calls, shared across every market a run is

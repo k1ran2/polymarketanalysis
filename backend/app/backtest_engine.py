@@ -611,6 +611,41 @@ def _market_window(market: BacktestMarket) -> tuple:
     return start, end
 
 
+def _evenly_spaced_indices(n_total: int, n_wanted: int) -> list:
+    """
+    n_wanted indices into range(n_total), evenly spaced, ALWAYS including the
+    final index (n_total - 1) -- the naive `int(i * n_total / n_wanted)`
+    stride never lands on it: for n_total=500, n_wanted=200, the last pick
+    comes out to index 497, silently dropping the final ~1% of whatever
+    `n_total` represents. For a market's checkpoint list, that ~1% is the
+    checkpoints closest to resolution -- confirmed against this project's
+    real cached markets: 233 of 356 (65%) exceed max_checkpoints_per_market
+    and get downsampled, and the worst case found drops the final 2.25 days
+    of a 455-day market entirely. That's exactly the window an insider
+    position is most likely to appear in (see InsiderConfig's urgency
+    factor), so this wasn't a cosmetic gap -- it was real signal coverage
+    silently missing at the one place it mattered most, contradicting this
+    function's own former claim of keeping "coverage across the market's
+    whole life."
+
+    Uses stride = (n_total-1)/(n_wanted-1) instead, which by construction
+    maps i=n_wanted-1 to exactly n_total-1.
+    """
+    if n_total <= 0:
+        return []
+    if n_wanted <= 1 or n_total <= 1:
+        return [n_total - 1]
+    if n_wanted >= n_total:
+        return list(range(n_total))
+    stride = (n_total - 1) / (n_wanted - 1)
+    # round() + dedup rather than a bare list comprehension: guards against
+    # a pathological n_wanted very close to n_total producing a repeated
+    # index after rounding, which would silently under-deliver rather than
+    # ever duplicate or go out of range.
+    indices = sorted({round(i * stride) for i in range(n_wanted)})
+    return indices
+
+
 def _build_checkpoints(market: BacktestMarket) -> list:
     start, end = _market_window(market)
     if start is None:
@@ -619,9 +654,9 @@ def _build_checkpoints(market: BacktestMarket) -> list:
     points = list(range(start, end, step))
     if len(points) > cfg.BACKTEST.max_checkpoints_per_market:
         # Downsample evenly rather than just truncating to the first N --
-        # keeps coverage across the market's whole life, not just its start.
-        stride = len(points) / cfg.BACKTEST.max_checkpoints_per_market
-        points = [points[int(i * stride)] for i in range(cfg.BACKTEST.max_checkpoints_per_market)]
+        # see _evenly_spaced_indices for why a naive stride doesn't actually
+        # achieve that.
+        points = [points[i] for i in _evenly_spaced_indices(len(points), cfg.BACKTEST.max_checkpoints_per_market)]
     return points
 
 
@@ -661,8 +696,14 @@ def _wallets_worth_scoring(
 
     n_samples = cfg.BACKTEST.wallet_discovery_checkpoints
     if len(checkpoints) > n_samples:
-        stride = len(checkpoints) / n_samples
-        sample_points = [checkpoints[int(i * stride)] for i in range(n_samples)]
+        # Same _evenly_spaced_indices fix as _build_checkpoints -- and here
+        # it matters even more: missing the market's final discovery sample
+        # meant a wallet that took a large position only in the last stretch
+        # before resolution (the classic insider profile the whole detector
+        # exists to catch) was never added to the fetch set at all, so it
+        # showed fetch_status != "ok" at EVERY checkpoint and was
+        # permanently invisible to both strategies for that entire market.
+        sample_points = [checkpoints[i] for i in _evenly_spaced_indices(len(checkpoints), n_samples)]
     else:
         sample_points = checkpoints
 

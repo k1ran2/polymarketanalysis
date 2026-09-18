@@ -39,11 +39,11 @@
       "verdict_overrides": null
     },
     "summary": {
-      "avg_pnl_usd": 1.29,
+      "avg_pnl_usd": 0.74,
       "by_category": {
         "Uncategorized": {
           "n": 7,
-          "pnl_usd": 9.05,
+          "pnl_usd": 5.16,
           "win_rate": 0.8571,
           "wins": 6
         }
@@ -51,16 +51,16 @@
       "by_signal_type": {
         "insider": {
           "n": 7,
-          "pnl_usd": 9.05,
-          "roi_pct": 1.29,
+          "pnl_usd": 5.16,
+          "roi_pct": 0.74,
           "staked_usd": 700.0,
           "win_rate": 0.8571,
           "wins": 6
         }
       },
       "n_trades": 7,
-      "roi_pct": 1.29,
-      "total_pnl_usd": 9.05,
+      "roi_pct": 0.74,
+      "total_pnl_usd": 5.16,
       "total_staked_usd": 700.0,
       "win_rate": 0.8571
     },
@@ -84,16 +84,16 @@
       {
         "category": null,
         "condition_id": "0x02dc46f4354c1cc447577db82ba62cca1bda737bd67b73fe966ce1bfe580868f",
-        "entry_price": 0.9775,
-        "pnl_pct": 0.023017902813299195,
-        "pnl_usd": 2.3017902813299194,
+        "entry_price": 0.9745,
+        "pnl_pct": 0.026167265264238036,
+        "pnl_usd": 2.6167265264238035,
         "question": "No change in Fed interest rates after September 2025 meeting?",
         "resolved_yes": 0,
-        "shares": 102.30179028132991,
+        "shares": 102.6167265264238,
         "side": "NO",
-        "signal_ts": 1757913068,
+        "signal_ts": 1757891468,
         "signal_type": "insider",
-        "signal_value": 87.3,
+        "signal_value": 82.2,
         "stake_usd": 100.0,
         "won": 1
       },
@@ -116,16 +116,16 @@
       {
         "category": null,
         "condition_id": "0x03ec83b8b1dc87d3c2b1c2c89535a344d859f25fa350801d63d2e1217827215b",
-        "entry_price": 0.895,
-        "pnl_pct": 0.11731843575418992,
-        "pnl_usd": 11.731843575418992,
+        "entry_price": 0.935,
+        "pnl_pct": 0.06951871657754004,
+        "pnl_usd": 6.951871657754004,
         "question": "Will edgeX launch a token in 2025?",
         "resolved_yes": 1,
-        "shares": 111.73184357541899,
+        "shares": 106.951871657754,
         "side": "YES",
-        "signal_ts": 1766441812,
+        "signal_ts": 1766463412,
         "signal_type": "insider",
-        "signal_value": 75.1,
+        "signal_value": 70.0,
         "stake_usd": 100.0,
         "won": 1
       },
@@ -148,16 +148,16 @@
       {
         "category": null,
         "condition_id": "0x04787bbd66241501604f377f11b897879c1593b019bb3363dac0a73e99b4a131",
-        "entry_price": 0.93,
-        "pnl_pct": 0.07526881720430102,
-        "pnl_usd": 7.526881720430102,
+        "entry_price": 0.925,
+        "pnl_pct": 0.08108108108108102,
+        "pnl_usd": 8.108108108108102,
         "question": "Will Fed cut interest rates 0 times in 2024?",
         "resolved_yes": 0,
-        "shares": 107.5268817204301,
+        "shares": 108.1081081081081,
         "side": "NO",
-        "signal_ts": 1721213069,
+        "signal_ts": 1721169869,
         "signal_type": "insider",
-        "signal_value": 72.1,
+        "signal_value": 70.3,
         "stake_usd": 100.0,
         "won": 1
       },
@@ -205,11 +205,11 @@
       "verdict_overrides": null
     },
     "summary": {
-      "avg_pnl_usd": 10.68,
+      "avg_pnl_usd": 10.73,
       "by_category": {
         "Uncategorized": {
           "n": 3,
-          "pnl_usd": 32.03,
+          "pnl_usd": 32.19,
           "win_rate": 0.6667,
           "wins": 2
         }
@@ -217,8 +217,8 @@
       "by_signal_type": {
         "lean": {
           "n": 2,
-          "pnl_usd": -97.85,
-          "roi_pct": -48.93,
+          "pnl_usd": -97.7,
+          "roi_pct": -48.85,
           "staked_usd": 200.0,
           "win_rate": 0.5,
           "wins": 1
@@ -233,8 +233,8 @@
         }
       },
       "n_trades": 3,
-      "roi_pct": 10.68,
-      "total_pnl_usd": 32.03,
+      "roi_pct": 10.73,
+      "total_pnl_usd": 32.19,
       "total_staked_usd": 300.0,
       "win_rate": 0.6667
     },
@@ -242,32 +242,32 @@
       {
         "category": null,
         "condition_id": "0x046e77ee08cb4fc2732afc04105b13be93f638087219b590fee7fa11b95cb6f8",
-        "entry_price": 0.979,
-        "pnl_pct": 0.021450459652706862,
-        "pnl_usd": 2.145045965270686,
+        "entry_price": 0.9775,
+        "pnl_pct": 0.023017902813299195,
+        "pnl_usd": 2.3017902813299194,
         "question": "Will Bryn Kenney win the 2025 National Heads-Up Poker Championship?",
         "resolved_yes": 0,
-        "shares": 102.14504596527068,
+        "shares": 102.30179028132991,
         "side": "NO",
-        "signal_ts": 1761778586,
+        "signal_ts": 1761821786,
         "signal_type": "lean",
-        "signal_value": 50.3,
+        "signal_value": 51.5,
         "stake_usd": 100.0,
         "won": 1
       },
       {
         "category": null,
         "condition_id": "0x04787bbd66241501604f377f11b897879c1593b019bb3363dac0a73e99b4a131",
-        "entry_price": 0.335,
-        "pnl_pct": -0.9999999999999999,
-        "pnl_usd": -99.99999999999999,
+        "entry_price": 0.315,
+        "pnl_pct": -1.0,
+        "pnl_usd": -100.0,
         "question": "Will Fed cut interest rates 0 times in 2024?",
         "resolved_yes": 0,
-        "shares": 298.5074626865671,
+        "shares": 317.46031746031747,
         "side": "YES",
-        "signal_ts": 1713696269,
+        "signal_ts": 1713717869,
         "signal_type": "lean",
-        "signal_value": 50.1,
+        "signal_value": 50.0,
         "stake_usd": 100.0,
         "won": 0
       },
@@ -283,7 +283,7 @@
         "side": "NO",
         "signal_ts": 1776937643,
         "signal_type": "strong_buy",
-        "signal_value": 79.3,
+        "signal_value": 74.8,
         "stake_usd": 100.0,
         "won": 1
       }
