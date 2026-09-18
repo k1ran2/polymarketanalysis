@@ -684,13 +684,20 @@ def test_wallets_worth_scoring_respects_overridden_insider_floor():
         volume=0.0, start_ts=NOW, end_ts=NOW + DAY, resolved_ts=NOW + DAY, resolved_yes=True,
     )
     checkpoints = [NOW]
+    by_checkpoint, _first_seen = bulk_share_timeline(conn, cid, checkpoints)
+    price_series_by_token = {"tokY": bulk_price_series(conn, "tokY"), "tokN": bulk_price_series(conn, "tokN")}
+    price_timestamps_by_token = {tok: [t for t, _ in s] for tok, s in price_series_by_token.items()}
 
     # Force top_n so small holds only qualify via the insider floor, not rank.
     orig_backtest_cfg = cfg.BACKTEST
     cfg.BACKTEST = dataclasses.replace(cfg.BACKTEST, smart_score_top_n_holders=1)
     try:
-        default_floor = _wallets_worth_scoring(conn, cid, checkpoints, market, insider_floor=5_000.0)
-        lowered_floor = _wallets_worth_scoring(conn, cid, checkpoints, market, insider_floor=1_000.0)
+        default_floor = _wallets_worth_scoring(
+            by_checkpoint, checkpoints, market, price_series_by_token, price_timestamps_by_token, insider_floor=5_000.0,
+        )
+        lowered_floor = _wallets_worth_scoring(
+            by_checkpoint, checkpoints, market, price_series_by_token, price_timestamps_by_token, insider_floor=1_000.0,
+        )
     finally:
         cfg.BACKTEST = orig_backtest_cfg
 

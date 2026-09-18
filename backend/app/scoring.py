@@ -287,10 +287,6 @@ def composite_and_percentile(
     return results
 
 
-# Clearer alias for new call sites.
-score_traders = composite_and_percentile
-
-
 # ---------------------------------------------------------------------------
 # §3.3 Trend (improving vs declining) — gates the fade pool
 # ---------------------------------------------------------------------------

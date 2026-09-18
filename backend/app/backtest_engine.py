@@ -473,13 +473,32 @@ def _backtest_one_market(run_id: str, condition_id: str, params: dict):
             print(f"[backtest] {condition_id[:12]} trade tape capped at Data API's 10k-offset limit -- "
                   f"early-life reconstruction for this market is incomplete")
         sync_price_history(conn, clob, condition_id, market.clob_token_ids, window_start, window_end, now_ts)
+
+        # Bulk-load the trade tape + price series ONCE here, before wallet
+        # discovery even runs, and reuse the same structures for both it and
+        # the main checkpoint loop below -- wallet discovery's sample points
+        # are a subset of `checkpoints`, so there is exactly one sweep of
+        # this market's trade tape per run, not two (see _wallets_worth_
+        # scoring's docstring for the redundant-scan this replaced).
+        token_for_side = {"YES": yes_token, "NO": no_token}
+        price_series_by_token = {
+            yes_token: bulk_price_series(conn, yes_token),
+            no_token: bulk_price_series(conn, no_token),
+        }
+        # Pre-extracted once, not per lookup -- see price_at_or_before_series's
+        # docstring for why this matters far more than it looks like it should.
+        price_timestamps_by_token = {tok: [t for t, _ in s] for tok, s in price_series_by_token.items()}
+        by_checkpoint, first_seen = bulk_share_timeline(conn, condition_id, checkpoints)
+
         # Only wallets that can actually move a $-weighted metric get their
         # trading history fetched -- see BacktestConfig.smart_score_top_n_holders.
         # A wallet outside this set is simply never fetched, which the
         # existing Holder-building code already treats correctly as Unrated
         # (no separate "skipped" code path needed).
         insider_floor = build_insider_cfg(params.get("insider_overrides")).min_position_usd
-        wallets = _wallets_worth_scoring(conn, condition_id, checkpoints, market, insider_floor)
+        wallets = _wallets_worth_scoring(
+            by_checkpoint, checkpoints, market, price_series_by_token, price_timestamps_by_token, insider_floor,
+        )
         need = wallets_needing_sync(conn, wallets, now_ts)
 
     if need:
@@ -498,22 +517,13 @@ def _backtest_one_market(run_id: str, condition_id: str, params: dict):
     no_edge_threshold = float(params.get("max_no_edge_entry_price") or cfg.BACKTEST.max_no_edge_entry_price)
 
     with db.db_session() as conn:
-        # Bulk-load everything the checkpoint loop below will ever need, ONCE,
+        # The rest of what the checkpoint loop below needs, bulk-loaded ONCE
         # instead of the per-timestamp functions doing one SQL round-trip per
-        # wallet/token per checkpoint (measured: ~75% of a checkpoint's cost
-        # used to be DB round-trips, not the trade-tape scan or the scoring
-        # math itself -- see _holders_at_fast's docstring for the full
-        # reasoning, and test_backtest_golden.py for the regression check
-        # that this produces byte-identical trades to the naive per-call path).
-        token_for_side = {"YES": yes_token, "NO": no_token}
-        price_series_by_token = {
-            yes_token: bulk_price_series(conn, yes_token),
-            no_token: bulk_price_series(conn, no_token),
-        }
-        # Pre-extracted once, not per lookup -- see price_at_or_before_series's
-        # docstring for why this matters far more than it looks like it should.
-        price_timestamps_by_token = {tok: [t for t, _ in s] for tok, s in price_series_by_token.items()}
-        by_checkpoint, first_seen = bulk_share_timeline(conn, condition_id, checkpoints)
+        # wallet per checkpoint (measured: ~75% of a checkpoint's cost used
+        # to be DB round-trips, not the trade-tape scan or the scoring math
+        # itself -- see _holders_at_fast's docstring for the full reasoning,
+        # and test_backtest_golden.py for the regression check that this
+        # produces byte-identical trades to the naive per-call path).
         all_wallets = list({w for (w, _outcome) in first_seen.keys()})
         # No checkpoint can ever need a wallet position closed after the LAST
         # checkpoint (see _holders_at_fast's bisect against this same prefix)
@@ -617,7 +627,8 @@ def _build_checkpoints(market: BacktestMarket) -> list:
 
 
 def _wallets_worth_scoring(
-    conn, condition_id: str, checkpoints: list, market: BacktestMarket,
+    by_checkpoint: dict, checkpoints: list, market: BacktestMarket,
+    price_series_by_token: dict, price_timestamps_by_token: dict,
     insider_floor: float = cfg.INSIDER.min_position_usd,
 ) -> list:
     """
@@ -630,9 +641,15 @@ def _wallets_worth_scoring(
     detection regardless of rank -- the CALLER's effective, possibly
     per-run-overridden InsiderConfig.min_position_usd, not always the
     global default: a lowered override that this function ignored would
-    silently never fetch the smaller wallets it was meant to catch). This
-    is a purely local pass (reconstruction + cached prices, no network)
-    over data already synced by the time this is called.
+    silently never fetch the smaller wallets it was meant to catch).
+
+    Takes the SAME bulk_share_timeline/bulk_price_series structures the main
+    checkpoint loop uses (built once by the caller) instead of re-scanning
+    the trade tape itself -- this used to call reconstruct_holders_at once
+    per sample point, a second full pass over the same trade rows
+    bulk_share_timeline already swept for every checkpoint (sample points
+    are a subset of `checkpoints`), left over from before the bulk-loading
+    speed pass. No network either way -- purely local, already-synced data.
 
     Skips a wallet entirely rather than fetching-then-discarding it -- the
     live insiders/smart-score code already treats an unfetched wallet as
@@ -652,13 +669,15 @@ def _wallets_worth_scoring(
 
     needed: set = set()
     for t in sample_points:
-        shares_by_key = reconstruct_holders_at(conn, condition_id, t)["shares"]
+        shares_by_key = by_checkpoint.get(t, {})
         sized = []
         for (wallet, outcome), shares in shares_by_key.items():
             if shares <= 0:
                 continue
             token_id = token_for_side.get(outcome)
-            price = price_at_or_before(conn, token_id, t) if token_id else None
+            series = price_series_by_token.get(token_id) if token_id else None
+            ts_list = price_timestamps_by_token.get(token_id) if token_id else None
+            price = price_at_or_before_series(series, t, timestamps=ts_list) if series is not None else None
             if price is None:
                 continue
             sized.append((wallet, shares * price))

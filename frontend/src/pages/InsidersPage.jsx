@@ -3,9 +3,9 @@ import { fetchInsiderMarkets, fetchInsiderMarketDetail, fetchInsiderStatus, scan
 import { timeAgo, formatTenure, tierColor } from "../format";
 
 function scoreColor(score) {
-  if (score >= 80) return "#c0392b";
-  if (score >= 60) return "#e07a1f";
-  return "#8892a0";
+  if (score >= 80) return "var(--danger)";
+  if (score >= 60) return "var(--warning)";
+  return "var(--neutral)";
 }
 
 export default function InsidersPage({ onOpenMarket }) {
