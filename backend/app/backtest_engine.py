@@ -54,10 +54,9 @@ from .backtest_data import (
     reconstruct_holders_at, sync_market_meta, sync_market_trades,
     sync_price_history, wallet_positions_asof, wallets_needing_sync,
 )
-from .insiders import _compute_cluster_factors, compute_insider_score, summarize_insider_rows
 from .pipeline import fetch_wallet_positions
 from .polymarket_client import ClobClient, DataAPIClient, GammaClient
-from .scoring import Holder, overall_market_verdict, smart_score_from_raw, trader_raw_stats
+from .scoring import Holder, smart_score_from_raw, trader_raw_stats
 
 _lock = threading.Lock()
 _current_run_id: Optional[str] = None
@@ -808,93 +807,17 @@ def _holders_at_fast(
     return holders
 
 
-_STRONG_BUY_RE = re.compile(r"^Strong Buy (YES|NO)$")
-_LEAN_RE = re.compile(r"^Lean (YES|NO)$")
-_FADE_RE = re.compile(r"^Fade (YES|NO)")
-
-
-def _parse_verdict_side(label: str) -> Optional[tuple]:
-    """label -> (side, strength) the same MarketVerdict labels the live UI shows, or None if non-directional."""
-    m = _STRONG_BUY_RE.match(label)
-    if m:
-        return m.group(1), "strong_buy"
-    m = _LEAN_RE.match(label)
-    if m:
-        return m.group(1), "lean"
-    m = _FADE_RE.match(label)
-    if m:
-        fade_target = m.group(1)
-        return ("NO" if fade_target == "YES" else "YES"), "fade"
-    return None
-
-
-_STRENGTH_RANK = {"strong_buy": 3, "lean": 2, "fade": 1}
-
-
-def build_verdict_cfg(overrides: Optional[dict]) -> cfg.VerdictConfig:
-    """A per-run VerdictConfig with `overrides` applied over the live defaults --
-    never mutates cfg.VERDICT itself, so this can't affect the live Markets tab.
-    None values are dropped first (RunRequest's Pydantic model reports every
-    field, set or not, as None when unset) so an unset field falls through to
-    the default instead of overwriting it with a literal None."""
-    overrides = {k: v for k, v in (overrides or {}).items() if v is not None}
-    if not overrides:
-        return cfg.VERDICT
-    return dataclasses.replace(cfg.VERDICT, **overrides)
-
-
-def build_insider_cfg(overrides: Optional[dict]) -> cfg.InsiderConfig:
-    """Same idea as build_verdict_cfg, for the insider detector's weights."""
-    overrides = {k: v for k, v in (overrides or {}).items() if v is not None}
-    if not overrides:
-        return cfg.INSIDER
-    return dataclasses.replace(cfg.INSIDER, **overrides)
-
-
-def _smart_money_signal(holders: list, current_price_yes: float, params: dict) -> Optional[tuple]:
-    verdict_cfg = build_verdict_cfg(params.get("verdict_overrides"))
-    verdict = overall_market_verdict(holders, current_price_yes, verdict_cfg=verdict_cfg)
-    parsed = _parse_verdict_side(verdict.label)
-    if parsed is None:
-        return None
-    side, strength = parsed
-    min_strength = params.get("min_signal_strength", "strong_buy")
-    if _STRENGTH_RANK[strength] < _STRENGTH_RANK.get(min_strength, 3):
-        return None
-    min_conviction = float(params.get("min_conviction", 0.0))
-    if verdict.conviction < min_conviction:
-        return None
-    return side, verdict.conviction, strength
-
-
-def _insider_signal(holders: list, t: int, end_date_iso: Optional[str], params: dict) -> Optional[tuple]:
-    insider_cfg = build_insider_cfg(params.get("insider_overrides"))
-    cluster_factors = _compute_cluster_factors(holders, insider_cfg)
-    flags = []
-    for h in holders:
-        flag = compute_insider_score(
-            h, t, cluster_factor=cluster_factors.get((h.wallet, h.side)), end_date=end_date_iso,
-            insider_cfg=insider_cfg,
-        )
-        if flag is None:
-            continue
-        flags.append({
-            "wallet": flag.wallet, "side": flag.side, "position_usd": flag.position_usd,
-            "insider_score": flag.insider_score, "reasons": flag.reasons,
-            "score_percentile": flag.score_percentile, "tier": flag.tier,
-            "first_seen_at": flag.first_seen_at,
-        })
-    if not flags:
-        return None
-    summary = summarize_insider_rows(flags)
-    min_conviction = float(params.get("min_conviction", insider_cfg.alert_threshold))
-    if summary.conviction < min_conviction:
-        return None
-    if summary.label == "Insiders lean YES":
-        return "YES", summary.conviction, "insider"
-    if summary.label == "Insiders lean NO":
-        return "NO", summary.conviction, "insider"
-    return None  # "both sides" / "no significant activity" isn't a directional trade
+# Shared with the (future) live trading watcher -- see app.signals' module
+# docstring for why this lives there now instead of here. Re-exported under
+# their original names so every existing call site/import in this module and
+# in tests keeps working unchanged.
+from .signals import (  # noqa: E402
+    STRENGTH_RANK as _STRENGTH_RANK,
+    build_insider_cfg, build_verdict_cfg,
+    insider_signal as _insider_signal,
+    parse_verdict_side as _parse_verdict_side,
+    smart_money_signal as _smart_money_signal,
+)
 
 
 def _summarize_run(run_id: str) -> dict:

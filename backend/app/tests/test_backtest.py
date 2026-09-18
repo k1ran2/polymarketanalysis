@@ -833,3 +833,23 @@ def test_list_searches_orders_newest_first():
 
     assert [r["id"] for r in results] == ["newer", "older"]
     conn.close()
+
+
+# ---------------------------------------------------------------------------
+# app.signals -- the directional-signal logic is shared with the (future)
+# live trading watcher via extraction into its own module. This pins down
+# that backtest_engine's names are genuinely the SAME functions (re-exports,
+# not copies) -- if a future edit accidentally forks them back into two
+# implementations, this fails immediately rather than silently drifting.
+# ---------------------------------------------------------------------------
+
+def test_backtest_engine_signal_functions_are_the_same_objects_as_app_signals():
+    import app.signals as signals_module
+    from app.backtest_engine import _insider_signal, _parse_verdict_side, _smart_money_signal, _STRENGTH_RANK
+
+    assert _smart_money_signal is signals_module.smart_money_signal
+    assert _insider_signal is signals_module.insider_signal
+    assert _parse_verdict_side is signals_module.parse_verdict_side
+    assert build_verdict_cfg is signals_module.build_verdict_cfg
+    assert build_insider_cfg is signals_module.build_insider_cfg
+    assert _STRENGTH_RANK is signals_module.STRENGTH_RANK
