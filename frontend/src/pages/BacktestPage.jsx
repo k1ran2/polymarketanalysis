@@ -136,6 +136,12 @@ export default function BacktestPage() {
   const [insiderWeights, setInsiderWeights] = useState({});
   const [showWeights, setShowWeights] = useState(false);
 
+  // Kept out of the way by default -- most runs never need them. Sweep/search
+  // are genuinely advanced tools (multi-run, take a while); min conviction /
+  // no-edge threshold are fine-tuning most people should leave at defaults.
+  const [showAdvancedSetup, setShowAdvancedSetup] = useState(false);
+  const [showAdvancedTools, setShowAdvancedTools] = useState(false);
+
   // Weight sweep: runs the SAME market set once per candidate value of one
   // parameter, so results are actually comparable -- the real way to tell
   // whether a weight matters, instead of eyeballing single runs one at a
@@ -470,97 +476,108 @@ export default function BacktestPage() {
   const running = run && (run.status === "pending" || run.status === "running");
   const watchingLiveElsewhere = liveRunId && liveRunId !== displayedRunId;
 
+  const activeStrategyInfo = strategyDefaults?.[strategy === "smart_money" ? "smart_money" : "insider"];
+
   return (
     <div>
       <div className="insiders-header">
         <div>
           <h2>Backtest</h2>
-          <p className="subtitle">
-            Point-in-time replay of the Smart Money verdict and Insider-score signals against real,
-            already-resolved markets — holders, Smart Scores and insider flags are all reconstructed
-            using only data that existed as of each checkpoint, never today's numbers.
-          </p>
+          <p className="subtitle">See how a strategy would have done on real, already-resolved markets.</p>
         </div>
       </div>
 
       <div className="notice">
-        <strong>Methodology note:</strong> entry price is Polymarket's last <em>traded</em> price nearest
-        each checkpoint (CLOB price history) — not a true historical bid/ask, since Polymarket doesn't
-        publish historical order-book depth. Results are therefore somewhat optimistic versus a real
-        fill, especially on thin/illiquid markets. Only one simulated trade is taken per market (the
-        first checkpoint whose signal clears the threshold), held to resolution — no early-exit
-        modeling. The first backtest of any given market is slow (every historical trader who ever held
-        it needs their own trading history fetched); re-running against the same market later is instant.
+        Entry price is the last traded price near each checkpoint, not a true bid/ask, so results run
+        slightly optimistic. Only one trade is taken per market. First run on a market is slow (fetching
+        trader history); re-running it later is instant.
       </div>
 
       {error && <div className="error">Error: {error}</div>}
 
       <section>
-        <h3>1. Pick markets</h3>
-        <div className="insiders-controls" style={{ flexWrap: "wrap", marginBottom: 16 }}>
+        <h3>1. Strategy</h3>
+        <div className="insiders-controls" style={{ flexWrap: "wrap" }}>
+          <label>
+            <input type="radio" name="strategy" checked={strategy === "smart_money"} onChange={() => setStrategy("smart_money")} />
+            {" "}Smart Money verdict
+          </label>
+          <label>
+            <input type="radio" name="strategy" checked={strategy === "insider"} onChange={() => setStrategy("insider")} />
+            {" "}Insider score
+          </label>
+          {strategy === "smart_money" && (
+            <label>
+              Signal:
+              <select value={minSignalStrength} onChange={(e) => setMinSignalStrength(e.target.value)}>
+                {SIGNAL_STRENGTH_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </label>
+          )}
+        </div>
+        {activeStrategyInfo && (
+          <p className="chart-caption" style={{ marginBottom: 0 }}>
+            {strategy === "smart_money"
+              ? "Follows historically-skilled traders: flags a side when their money clearly disagrees with the market price."
+              : "Flags positions that look like early/informed money — new or thin-history wallets, unusually large or well-timed bets."}
+            {" "}Full formula is under Advanced settings → Edit weights.
+          </p>
+        )}
+      </section>
+
+      <section>
+        <h3>2. Markets</h3>
+        <div className="insiders-controls" style={{ flexWrap: "wrap", marginBottom: 12 }}>
           <label>
             <input type="radio" name="pickMode" checked={pickMode === "auto"} onChange={() => setPickMode("auto")} />
-            {" "}Test a strategy across many markets
+            {" "}Test broadly (recommended)
           </label>
           <label>
             <input type="radio" name="pickMode" checked={pickMode === "manual"} onChange={() => setPickMode("manual")} />
-            {" "}Pick specific markets myself
+            {" "}Pick specific markets
           </label>
         </div>
 
         {pickMode === "auto" ? (
-          <>
-            <p className="chart-caption">
-              Runs the chosen strategy across a spread of resolved markets — different categories, years,
-              and sizes (both big liquid markets and smaller ones, not just the biggest) — and shows
-              cumulative P&amp;L over calendar time across all of them, live as results come in, like a
-              stock-strategy backtest. Speed no longer depends much on market size or count: each market
-              only fetches trading history for its biggest holders and anyone large enough to matter for
-              insider detection (not every wallet that ever touched it), and several markets are processed
-              at once. A strict signal like Strong Buy still only fires on a minority of checkpoints —
-              that's the signal being selective, not a processing limit — so more markets means more real
-              chances for it to fire, not just a longer wait.
-            </p>
-            <div className="insiders-controls" style={{ flexWrap: "wrap" }}>
-              <label>
-                Categories:
-                <select
-                  multiple
-                  value={autoCategories}
-                  onChange={(e) => setAutoCategories(Array.from(e.target.selectedOptions, (o) => o.value))}
-                  style={{ minWidth: 140, height: 90 }}
-                >
-                  {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </label>
-              <span className="stat-footnote" style={{ maxWidth: 140 }}>none selected = all categories (⌘/ctrl-click for multiple)</span>
-              <label>
-                From year:
-                <select value={autoYearMin} onChange={(e) => setAutoYearMin(e.target.value)}>
-                  {RESOLVED_YEARS.slice().reverse().map((y) => <option key={y} value={y}>{y}</option>)}
-                </select>
-              </label>
-              <label>
-                To year:
-                <select value={autoYearMax} onChange={(e) => setAutoYearMax(e.target.value)}>
-                  {RESOLVED_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
-                </select>
-              </label>
-              <label>
-                How many markets:
-                <input
-                  type="number" min="1" max="500" value={autoCount}
-                  onChange={(e) => setAutoCount(e.target.value)}
-                  style={{ width: 64 }}
-                />
-              </label>
-            </div>
-          </>
+          <div className="insiders-controls" style={{ flexWrap: "wrap" }}>
+            <label>
+              Categories:
+              <select
+                multiple
+                value={autoCategories}
+                onChange={(e) => setAutoCategories(Array.from(e.target.selectedOptions, (o) => o.value))}
+                style={{ minWidth: 140, height: 90 }}
+              >
+                {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </label>
+            <span className="stat-footnote" style={{ maxWidth: 130 }}>none = all categories</span>
+            <label>
+              From:
+              <select value={autoYearMin} onChange={(e) => setAutoYearMin(e.target.value)}>
+                {RESOLVED_YEARS.slice().reverse().map((y) => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </label>
+            <label>
+              To:
+              <select value={autoYearMax} onChange={(e) => setAutoYearMax(e.target.value)}>
+                {RESOLVED_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </label>
+            <label>
+              Markets:
+              <input
+                type="number" min="1" max="500" value={autoCount}
+                onChange={(e) => setAutoCount(e.target.value)}
+                style={{ width: 64 }}
+              />
+            </label>
+          </div>
         ) : (
           <>
             <div className="search-bar">
               <input
-                placeholder="Search resolved markets by question (e.g. Fed, election, Lakers)… or leave blank to browse"
+                placeholder="Search by question (e.g. Fed, election, Lakers)…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && doSearch()}
@@ -589,7 +606,6 @@ export default function BacktestPage() {
                   {RESOLVED_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
                 </select>
               </label>
-              <span className="insiders-meta">sorted by volume, highest first</span>
             </div>
 
             {candidatesLoading && <div className="empty-state">Loading…</div>}
@@ -631,19 +647,8 @@ export default function BacktestPage() {
       </section>
 
       <section>
-        <h3>2. Choose a strategy</h3>
-        <div className="insiders-controls" style={{ flexWrap: "wrap" }}>
-          <label>
-            <input type="radio" name="strategy" checked={strategy === "smart_money"} onChange={() => setStrategy("smart_money")} />
-            {" "}Smart Money verdict
-          </label>
-          <label>
-            <input type="radio" name="strategy" checked={strategy === "insider"} onChange={() => setStrategy("insider")} />
-            {" "}Insider score
-          </label>
-        </div>
-
-        <div className="insiders-controls" style={{ flexWrap: "wrap", marginTop: 10 }}>
+        <h3>3. Run</h3>
+        <div className="insiders-controls" style={{ flexWrap: "wrap", marginBottom: 4 }}>
           <label>
             Stake per trade ($):
             <input
@@ -652,59 +657,55 @@ export default function BacktestPage() {
               style={{ width: 90 }}
             />
           </label>
-          {strategy === "smart_money" && (
-            <label>
-              Minimum signal:
-              <select value={minSignalStrength} onChange={(e) => setMinSignalStrength(e.target.value)}>
-                {SIGNAL_STRENGTH_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </label>
-          )}
-          <label>
-            Min conviction (0-100, blank = default):
-            <input
-              type="number" min="0" max="100" value={minConviction}
-              onChange={(e) => setMinConviction(e.target.value)}
-              style={{ width: 70 }}
-            />
-          </label>
-          <label title="Skip a signal if the market already prices that side this close to $1 -- a win there pays pennies while a loss costs the full stake">
-            Skip entries at/above (¢):
-            <input
-              type="number" min="50" max="100" step="0.1" value={Math.round(noEdgeThreshold * 1000) / 10}
-              onChange={(e) => setNoEdgeThreshold(Number(e.target.value) / 100)}
-              style={{ width: 70 }}
-            />
-          </label>
+          <button className="back-link" onClick={() => setShowAdvancedSetup((v) => !v)}>
+            {showAdvancedSetup ? "▾" : "▸"} Advanced settings
+          </button>
         </div>
 
-        {strategyDefaults && (
-          <div style={{ marginTop: 14 }}>
-            <button className="back-link" onClick={() => setShowWeights((v) => !v)}>
-              {showWeights ? "▾" : "▸"} Methodology &amp; weights for {strategy === "smart_money" ? "Smart Money verdict" : "Insider score"}
-            </button>
-            {showWeights && (
-              <MethodologyPanel
-                info={strategyDefaults[strategy === "smart_money" ? "smart_money" : "insider"]}
-                weights={strategy === "smart_money" ? verdictWeights : insiderWeights}
-                setWeights={strategy === "smart_money" ? setVerdictWeights : setInsiderWeights}
-                onReset={() => {
-                  const info = strategyDefaults[strategy === "smart_money" ? "smart_money" : "insider"];
-                  const reset = pickEditable(info);
-                  if (strategy === "smart_money") setVerdictWeights(reset);
-                  else setInsiderWeights(reset);
-                }}
+        {showAdvancedSetup && (
+          <div className="insiders-controls" style={{ flexWrap: "wrap", marginBottom: 12 }}>
+            <label>
+              Min conviction (blank = default):
+              <input
+                type="number" min="0" max="100" value={minConviction}
+                onChange={(e) => setMinConviction(e.target.value)}
+                style={{ width: 70 }}
               />
+            </label>
+            <label title="Skip a signal if the market already prices that side this close to $1 -- a win there pays pennies while a loss costs the full stake">
+              Skip entries at/above (¢):
+              <input
+                type="number" min="50" max="100" step="0.1" value={Math.round(noEdgeThreshold * 1000) / 10}
+                onChange={(e) => setNoEdgeThreshold(Number(e.target.value) / 100)}
+                style={{ width: 70 }}
+              />
+            </label>
+            {strategyDefaults && (
+              <button className="back-link" onClick={() => setShowWeights((v) => !v)}>
+                {showWeights ? "▾" : "▸"} Edit weights
+              </button>
             )}
           </div>
         )}
-      </section>
 
-      <section>
-        <h3>3. Run</h3>
-        <button className="btn-primary" onClick={handleRun} disabled={!!liveRunId || sweepRunning}>
-          {liveRunId ? "Running…" : "Run backtest"}
-        </button>
+        {showAdvancedSetup && showWeights && (
+          <MethodologyPanel
+            info={activeStrategyInfo}
+            weights={strategy === "smart_money" ? verdictWeights : insiderWeights}
+            setWeights={strategy === "smart_money" ? setVerdictWeights : setInsiderWeights}
+            onReset={() => {
+              const reset = pickEditable(activeStrategyInfo);
+              if (strategy === "smart_money") setVerdictWeights(reset);
+              else setInsiderWeights(reset);
+            }}
+          />
+        )}
+
+        <div style={{ marginTop: 10 }}>
+          <button className="btn-primary" onClick={handleRun} disabled={!!liveRunId || sweepRunning}>
+            {liveRunId ? "Running…" : "Run backtest"}
+          </button>
+        </div>
 
         {watchingLiveElsewhere && (
           <div className="notice" style={{ marginTop: 12 }}>
@@ -787,11 +788,6 @@ export default function BacktestPage() {
                 <h4 style={{ margin: "0 0 10px", fontSize: "0.9rem", fontWeight: 650 }}>
                   By signal type
                 </h4>
-                <p className="chart-caption">
-                  If "Strong Buy + Lean" or "+ Fade" was allowed, this splits results back out by which
-                  exact case fired -- the overall number above can hide a profitable strict case being
-                  dragged down by a loose one lumped in with it, or vice versa.
-                </p>
                 <div className="table-scroll">
                   <table className="holder-table">
                     <thead>
@@ -880,12 +876,15 @@ export default function BacktestPage() {
 
       {strategyDefaults && (
         <section>
-          <h3>4. Find optimal weights (sweep)</h3>
+          <button className="back-link" style={{ fontSize: "1rem", fontWeight: 700 }} onClick={() => setShowAdvancedTools((v) => !v)}>
+            {showAdvancedTools ? "▾" : "▸"} Advanced: tune &amp; optimize weights
+          </button>
+          {showAdvancedTools && (
+          <div style={{ marginTop: 16 }}>
+          <h4 style={{ margin: "0 0 6px", fontSize: "0.9rem", fontWeight: 650 }}>Sweep one weight</h4>
           <p className="chart-caption">
-            Runs the SAME set of markets once per value below, varying only the one parameter chosen —
-            the only way to actually tell whether a weight matters, rather than eyeballing single runs of
-            a handful of trades each. Uses your current strategy, market selection, and other settings
-            above; each point is a full backtest, so this can take a while for a large market set.
+            Runs the same markets once per value, varying only this parameter — the clean way to see if
+            it matters. Uses your settings above; each value is a full backtest.
           </p>
           <div className="insiders-controls" style={{ flexWrap: "wrap" }}>
             <label>
@@ -966,19 +965,12 @@ export default function BacktestPage() {
               </div>
             </>
           )}
-        </section>
-      )}
 
-      {strategyDefaults && (
-        <section>
-          <h3>5. Optimize (ML-style search, with held-out validation)</h3>
+          <h4 style={{ margin: "32px 0 6px", fontSize: "0.9rem", fontWeight: 650 }}>Optimize (with held-out validation)</h4>
           <p className="chart-caption">
-            Randomly samples combinations across ALL the ranges checked below (not one parameter at a
-            time), running each on a TRAIN slice of the market selection above. The single best-found
-            combination is then evaluated <strong>once</strong>, at the end, on a TEST slice held out from
-            every tuning iteration — that test result, not the train result, is the honest answer to
-            "did this actually find something real, or just fit this exact history". A gap where train
-            looks great but test doesn't is overfitting, not a bug.
+            Tries random combinations of the checked weights together, tuning on most of your markets and
+            testing the best one on markets it never saw — the TEST number is the honest result; if TRAIN
+            looks much better than TEST, that combination is overfit, not actually better.
           </p>
           <div className="insiders-controls" style={{ flexWrap: "wrap" }}>
             {Object.keys(strategyDefaults[strategy === "smart_money" ? "smart_money" : "insider"].param_labels).map((key) => {
@@ -1136,6 +1128,8 @@ export default function BacktestPage() {
                 </table>
               </div>
             </div>
+          )}
+          </div>
           )}
         </section>
       )}
