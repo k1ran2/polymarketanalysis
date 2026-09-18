@@ -13,6 +13,7 @@ since new wallets keep trading after we first see them.
 """
 from __future__ import annotations
 
+import bisect
 import json
 import time
 from dataclasses import dataclass
@@ -387,3 +388,136 @@ def wallet_positions_asof(conn, wallet: str, as_of_ts: int) -> list:
             cur_price=r["cur_price"], timestamp=r["timestamp"],
         ))
     return out
+
+
+# ---------------------------------------------------------------------------
+# Bulk loaders -- for a caller evaluating MANY point-in-time timestamps
+# against the SAME market/wallet set (a backtest's checkpoint loop: up to
+# max_checkpoints_per_market repeated point-in-time reads of a stable
+# underlying dataset). The per-timestamp functions above each cost one SQL
+# round-trip; calling them once per wallet per checkpoint is what actually
+# dominated backtest wall-clock time (measured: ~75% of a checkpoint's cost
+# was DB round-trips, not the trade-tape scan or the scoring math itself).
+# These load everything the whole checkpoint loop will ever need ONCE, so
+# each checkpoint only does in-memory bisects afterward. Kept alongside the
+# per-timestamp functions (not replacing them) -- callers that only need one
+# point in time (e.g. the live dashboard) have no reason to bulk-load.
+# ---------------------------------------------------------------------------
+
+def bulk_price_series(conn, token_id: str) -> list:
+    """All cached (timestamp, price) points for one token, sorted ascending --
+    pairs with price_at_or_before_series() for O(log n) bisect lookups
+    instead of price_at_or_before()'s two SQL queries per call."""
+    rows = conn.execute(
+        "SELECT timestamp, price FROM backtest_price_history WHERE token_id=? ORDER BY timestamp ASC",
+        (token_id,),
+    ).fetchall()
+    return [(r["timestamp"], r["price"]) for r in rows]
+
+
+def price_at_or_before_series(
+    series: list, ts: int, lookback_hours: float = cfg.BACKTEST.price_lookback_hours,
+    timestamps: Optional[list] = None,
+) -> Optional[float]:
+    """Exactly price_at_or_before()'s semantics (nearest at/before within the
+    lookback window, else nearest after within it, else None), against an
+    already-loaded sorted (timestamp, price) list from bulk_price_series().
+
+    Pass `timestamps` (the same list's timestamps, pre-extracted once) when
+    calling this many times against the same series -- e.g. once per
+    checkpoint in a backtest -- otherwise every call rebuilds that list from
+    scratch, which for a market with a long price history turns "O(log n)
+    bisect" back into an O(n) scan in practice (measured: this was the
+    single biggest remaining cost after the initial bulk-loading pass)."""
+    if not series:
+        return None
+    window = int(lookback_hours * 3600)
+    if timestamps is None:
+        timestamps = [t for t, _ in series]
+    idx = bisect.bisect_right(timestamps, ts) - 1
+    if idx >= 0:
+        t_at, p_at = series[idx]
+        if (ts - t_at) <= window:
+            return p_at
+    if idx + 1 < len(series):
+        t_after, p_after = series[idx + 1]
+        if (t_after - ts) <= window:
+            return p_after
+    return None
+
+
+def bulk_wallet_positions(conn, wallets: list) -> dict:
+    """{wallet: [ClosedPosition, ...]} sorted by timestamp ascending, for
+    every wallet in `wallets`, in ONE query -- pairs with a bisect on each
+    wallet's list to get the no-lookahead prefix as-of any timestamp,
+    instead of one wallet_positions_asof() query per wallet per checkpoint."""
+    uniq = list(dict.fromkeys(wallets))
+    out: dict = {w: [] for w in uniq}
+    if not uniq:
+        return out
+    rows = conn.execute(
+        "SELECT * FROM backtest_wallet_positions WHERE wallet IN ({}) ORDER BY wallet, timestamp ASC".format(
+            ",".join("?" * len(uniq))
+        ),
+        tuple(uniq),
+    ).fetchall()
+    for r in rows:
+        out[r["wallet"]].append(ClosedPosition(
+            wallet=r["wallet"], condition_id=r["condition_id"], avg_price=r["avg_price"],
+            total_bought=r["total_bought"], realized_pnl=r["realized_pnl"],
+            cur_price=r["cur_price"], timestamp=r["timestamp"],
+        ))
+    return out
+
+
+def bulk_fetch_status(conn, wallets: list) -> dict:
+    """{wallet: fetch_status} for every wallet in `wallets`, in ONE query."""
+    uniq = list(dict.fromkeys(wallets))
+    if not uniq:
+        return {}
+    rows = conn.execute(
+        "SELECT wallet, fetch_status FROM backtest_wallet_sync WHERE wallet IN ({})".format(
+            ",".join("?" * len(uniq))
+        ),
+        tuple(uniq),
+    ).fetchall()
+    return {r["wallet"]: r["fetch_status"] for r in rows}
+
+
+def bulk_share_timeline(conn, condition_id: str, checkpoints: list) -> tuple:
+    """
+    ({t: {(wallet,outcome): net_shares}}, {(wallet,outcome): first_seen_ts})
+    for every t in `checkpoints`, from a SINGLE forward sweep of the cached
+    trade tape -- O(trades + checkpoints) total, instead of
+    reconstruct_holders_at()'s O(trades) *per checkpoint* (O(trades *
+    checkpoints) across a whole market, the same trade rows rescanned from
+    the beginning every time). `checkpoints` must be sorted ascending, which
+    _build_checkpoints() already produces.
+
+    Each checkpoint's entry is a snapshot (shallow dict copy) of the running
+    share balance at that moment -- cheap (proportional to the market's
+    current holder count, not its trade history), and safe for a caller to
+    hold onto/mutate independently of later checkpoints.
+    """
+    rows = conn.execute(
+        "SELECT wallet, outcome, side, size, timestamp FROM backtest_market_trades "
+        "WHERE condition_id=? ORDER BY timestamp ASC",
+        (condition_id,),
+    ).fetchall()
+
+    shares: dict = {}
+    first_seen: dict = {}
+    by_checkpoint: dict = {}
+    row_idx = 0
+    n_rows = len(rows)
+    for t in checkpoints:
+        while row_idx < n_rows and rows[row_idx]["timestamp"] <= t:
+            r = rows[row_idx]
+            key = (r["wallet"], r["outcome"])
+            delta = r["size"] if r["side"] == "BUY" else -r["size"]
+            shares[key] = shares.get(key, 0.0) + delta
+            if key not in first_seen:
+                first_seen[key] = r["timestamp"]
+            row_idx += 1
+        by_checkpoint[t] = dict(shares)
+    return by_checkpoint, first_seen

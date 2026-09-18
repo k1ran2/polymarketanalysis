@@ -11,9 +11,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+import random
+
 from app.db import SCHEMA, MIGRATIONS
 from app.scoring import Holder
-from app.insiders import compute_insider_score, scan_market, summarize_market, list_flags, list_markets_with_flags
+from app.insiders import (
+    _compute_cluster_factors, compute_insider_score, scan_market, summarize_market,
+    list_flags, list_markets_with_flags,
+)
 from app import config as cfg
 
 NOW = 1_700_000_000
@@ -417,4 +422,89 @@ def test_list_flags_filtered_to_one_market():
     flags = list_flags(conn, condition_id="c1")
     assert len(flags) == 1
     assert flags[0]["wallet"] == "0xa"
-    conn.close()
+
+
+# ---------------------------------------------------------------------------
+# _compute_cluster_factors -- optimized from an O(k^2) all-pairs scan to an
+# O(k log k) sort + bisect per holder (real cost on a market with many
+# thin/new holders -- exactly the pattern a real insider cluster looks like,
+# and the single most expensive step in a backtest checkpoint before this
+# fix). Verified against a brute-force reference so the speedup can't have
+# silently changed any actual score.
+# ---------------------------------------------------------------------------
+
+def _brute_force_cluster_factors(holders: list, insider_cfg: cfg.InsiderConfig = cfg.INSIDER) -> dict:
+    """The original O(k^2) implementation, kept only as a test oracle."""
+    window_s = insider_cfg.cluster_window_hours * 3600.0
+    by_side: dict = {}
+    for h in holders:
+        n_resolved = h.n_trades or 0
+        if n_resolved < insider_cfg.thin_history_n and h.first_seen_at is not None:
+            by_side.setdefault(h.side, []).append(h)
+    others_needed = max(1, insider_cfg.cluster_full_at - 1)
+    factors = {}
+    for group in by_side.values():
+        for h in group:
+            co_arrivals = sum(
+                1 for other in group
+                if other.wallet != h.wallet and abs(other.first_seen_at - h.first_seen_at) <= window_s
+            )
+            factors[(h.wallet, h.side)] = min(1.0, co_arrivals / others_needed)
+    return factors
+
+
+def _make_thin_holder(wallet, side, first_seen_at):
+    return Holder(
+        wallet, side, 10_000.0, None, "Unrated", n_trades=0,
+        first_active_ts=None, first_seen_at=first_seen_at,
+    )
+
+
+def test_cluster_factors_matches_brute_force_on_random_arrivals():
+    rng = random.Random(42)
+    for _trial in range(20):
+        holders = []
+        for i in range(rng.randint(1, 40)):
+            side = rng.choice(["YES", "NO"])
+            # Cluster arrivals into a few tight groups plus scattered noise,
+            # so both "many co-arrivals" and "isolated" cases get exercised.
+            base = rng.choice([NOW, NOW + 100_000, NOW + 500_000])
+            ts = base + rng.randint(-3600, 3600)
+            holders.append(_make_thin_holder(f"0x{i}", side, ts))
+        assert _compute_cluster_factors(holders) == _brute_force_cluster_factors(holders)
+
+
+def test_cluster_factors_handles_duplicate_timestamps():
+    # Several different wallets sharing the exact same first_seen_at -- the
+    # bisect range must still exclude exactly one (the holder itself), not
+    # collapse duplicates or over/under-count them.
+    holders = [_make_thin_holder(f"0x{i}", "YES", NOW) for i in range(5)]
+    assert _compute_cluster_factors(holders) == _brute_force_cluster_factors(holders)
+    result = _compute_cluster_factors(holders)
+    # 4 co-arrivals (everyone else) against others_needed = cluster_full_at - 1
+    others_needed = max(1, cfg.INSIDER.cluster_full_at - 1)
+    assert result[("0x0", "YES")] == min(1.0, 4 / others_needed)
+
+
+def test_cluster_factors_excludes_only_self_not_holders_outside_window():
+    window_s = cfg.INSIDER.cluster_window_hours * 3600.0
+    holders = [
+        _make_thin_holder("0xnear", "YES", NOW),
+        _make_thin_holder("0xfar", "YES", NOW + int(window_s) + 3600),  # outside the window
+    ]
+    result = _compute_cluster_factors(holders)
+    assert result[("0xnear", "YES")] == 0.0
+    assert result[("0xfar", "YES")] == 0.0
+
+
+def test_cluster_factors_separates_sides_and_skips_non_thin_or_unknown_arrival():
+    holders = [
+        _make_thin_holder("0xa", "YES", NOW),
+        _make_thin_holder("0xb", "NO", NOW),  # different side -- not a co-arrival for 0xa
+        Holder("0xc", "YES", 10_000.0, None, "Unrated", n_trades=50, first_active_ts=NOW - 86400, first_seen_at=NOW),  # not thin
+        Holder("0xd", "YES", 10_000.0, None, "Unrated", n_trades=0, first_active_ts=None, first_seen_at=None),  # unknown arrival
+    ]
+    result = _compute_cluster_factors(holders)
+    assert result[("0xa", "YES")] == 0.0
+    assert ("0xc", "YES") not in result
+    assert ("0xd", "YES") not in result

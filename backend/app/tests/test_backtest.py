@@ -5,6 +5,8 @@ run against a synthetic in-memory market so the pnl math and no-lookahead
 gating can be checked exactly, not just "looks reasonable".
 """
 import dataclasses
+import json
+import random
 import sqlite3
 import sys
 from pathlib import Path
@@ -13,12 +15,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app.db import SCHEMA, MIGRATIONS
 from app.backtest_data import (
-    price_at_or_before, reconstruct_holders_at, wallet_positions_asof,
+    bulk_fetch_status, bulk_price_series, bulk_share_timeline, bulk_wallet_positions,
+    price_at_or_before, price_at_or_before_series, reconstruct_holders_at, wallet_positions_asof,
 )
 from app.backtest_engine import (
-    _build_checkpoints, _has_no_edge, _parse_verdict_side, _search_objective, _summarize_run,
-    _wallets_worth_scoring, build_insider_cfg, build_verdict_cfg, get_run, get_search, list_searches,
-    reconcile_orphaned_runs, start_search, train_test_split_markets,
+    _build_checkpoints, _has_no_edge, _holders_at, _holders_at_fast, _parse_verdict_side,
+    _search_objective, _summarize_run, _wallets_worth_scoring, build_insider_cfg, build_verdict_cfg,
+    get_run, get_search, list_searches, reconcile_orphaned_runs, start_search, train_test_split_markets,
 )
 from app.backtest_data import BacktestMarket
 from app import config as cfg
@@ -147,6 +150,190 @@ def test_wallet_positions_asof_excludes_future_closes():
     positions = wallet_positions_asof(conn, "0xa", NOW)
     assert len(positions) == 1
     assert positions[0].condition_id == "cX"
+    conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Bulk loaders -- must be exactly equivalent to the per-timestamp functions
+# above, just loaded once and sliced in memory. This equivalence is the
+# entire safety argument for the speed optimization: these are drop-in
+# replacements for a checkpoint loop calling the single-timestamp versions
+# once per wallet/token per checkpoint, verified here against random data
+# and end-to-end against a golden fixture in test_backtest_golden.py.
+# ---------------------------------------------------------------------------
+
+def test_bulk_price_series_matches_price_at_or_before_on_random_queries():
+    conn = _make_conn()
+    rng = random.Random(7)
+    for _ in range(30):
+        _insert_price(conn, "tok1", "c1", NOW + rng.randint(-5 * DAY, 5 * DAY), rng.uniform(0.01, 0.99))
+    conn.commit()
+
+    series = bulk_price_series(conn, "tok1")
+    assert series == sorted(series)  # ascending, as documented
+    for _ in range(50):
+        ts = NOW + random.Random().randint(-6 * DAY, 6 * DAY)
+        lookback = rng.choice([1, 12, 48, 240])
+        assert price_at_or_before_series(series, ts, lookback_hours=lookback) == price_at_or_before(conn, "tok1", ts, lookback_hours=lookback)
+    conn.close()
+
+
+def test_bulk_wallet_positions_matches_wallet_positions_asof():
+    conn = _make_conn()
+    rng = random.Random(11)
+    wallets = ["0xa", "0xb", "0xc"]
+    for w in wallets:
+        for _ in range(rng.randint(0, 8)):
+            conn.execute(
+                "INSERT INTO backtest_wallet_positions (wallet, condition_id, avg_price, total_bought, "
+                "realized_pnl, cur_price, timestamp) VALUES (?,?,?,?,?,?,?)",
+                (w, f"c{rng.randint(0,5)}", rng.uniform(0, 1), rng.uniform(1, 1000),
+                 rng.uniform(-500, 500), rng.choice([0.0, 1.0]), NOW + rng.randint(-10 * DAY, 10 * DAY)),
+            )
+    conn.commit()
+
+    bulk = bulk_wallet_positions(conn, wallets + ["0xnoposition"])
+    assert bulk["0xnoposition"] == []
+    for w in wallets:
+        for as_of in (NOW - 5 * DAY, NOW, NOW + 5 * DAY, NOW + 20 * DAY):
+            prefix_len = bisect_len(bulk[w], as_of)
+            expected = wallet_positions_asof(conn, w, as_of)
+            assert len(bulk[w][:prefix_len]) == len(expected)
+            assert {p.timestamp for p in bulk[w][:prefix_len]} == {p.timestamp for p in expected}
+    conn.close()
+
+
+def bisect_len(sorted_positions, as_of_ts):
+    import bisect as _bisect
+    return _bisect.bisect_right([p.timestamp for p in sorted_positions], as_of_ts)
+
+
+def test_bulk_fetch_status_matches_individual_lookups():
+    conn = _make_conn()
+    conn.execute("INSERT INTO backtest_wallet_sync (wallet, synced_at, fetch_status) VALUES ('0xa', ?, 'ok')", (NOW,))
+    conn.execute("INSERT INTO backtest_wallet_sync (wallet, synced_at, fetch_status) VALUES ('0xb', ?, 'error')", (NOW,))
+    conn.commit()
+
+    result = bulk_fetch_status(conn, ["0xa", "0xb", "0xnever_fetched"])
+    assert result == {"0xa": "ok", "0xb": "error"}  # 0xnever_fetched absent, matching the "no row" case
+    conn.close()
+
+
+def test_bulk_share_timeline_matches_reconstruct_holders_at_per_checkpoint():
+    conn = _make_conn()
+    rng = random.Random(99)
+    for _ in range(40):
+        wallet = rng.choice(["0xa", "0xb", "0xc", "0xd"])
+        side = rng.choice(["BUY", "SELL"])
+        outcome = rng.choice(["YES", "NO"])
+        _insert_trade(conn, "c1", wallet, side, outcome, rng.uniform(0.1, 0.9), rng.uniform(1, 100),
+                      NOW + rng.randint(0, 20 * DAY))
+    conn.commit()
+
+    checkpoints = sorted({NOW + i * 6 * 3600 for i in range(0, 80)})
+    by_checkpoint, first_seen = bulk_share_timeline(conn, "c1", checkpoints)
+
+    for t in checkpoints[::7]:  # sample, not every checkpoint -- O(checkpoints^2) brute force otherwise
+        expected = reconstruct_holders_at(conn, "c1", t)
+        assert by_checkpoint[t] == expected["shares"]
+        # bulk_share_timeline returns ONE first_seen dict covering the whole
+        # sweep (not re-scoped per checkpoint) -- correct as long as every
+        # key actually present in this checkpoint's shares snapshot maps to
+        # the same first_seen value reconstruct_holders_at would give when
+        # asked as-of exactly this t (a key can only enter `shares` on the
+        # same trade row that sets its first_seen, so the value can never
+        # change afterward -- see bulk_share_timeline's docstring reasoning).
+        for key, expected_ts in expected["first_seen"].items():
+            assert first_seen[key] == expected_ts
+    conn.close()
+
+
+def test_bulk_share_timeline_snapshots_are_independent_across_checkpoints():
+    """A later checkpoint's snapshot must not be the SAME mutable dict as an
+    earlier one's -- silently aliasing them would make one checkpoint's
+    consumer see another's holdings if either ever mutated its copy."""
+    conn = _make_conn()
+    _insert_trade(conn, "c1", "0xa", "BUY", "YES", 0.5, 100, NOW)
+    _insert_trade(conn, "c1", "0xa", "BUY", "YES", 0.5, 50, NOW + 100)
+    conn.commit()
+
+    by_checkpoint, _ = bulk_share_timeline(conn, "c1", [NOW, NOW + 50, NOW + 200])
+    assert by_checkpoint[NOW][("0xa", "YES")] == 100
+    assert by_checkpoint[NOW + 50][("0xa", "YES")] == 100  # second buy hasn't landed yet
+    assert by_checkpoint[NOW + 200][("0xa", "YES")] == 150
+    by_checkpoint[NOW][("0xa", "YES")] = 999999  # mutate the earliest snapshot
+    assert by_checkpoint[NOW + 200][("0xa", "YES")] == 150  # unaffected -- proves independence
+    conn.close()
+
+
+# ---------------------------------------------------------------------------
+# _holders_at_fast -- must produce EXACTLY _holders_at()'s output (same
+# Holder fields, same order-independent set), just from precomputed bulk
+# structures instead of per-checkpoint queries. This is the direct,
+# surgical safety net for the speed optimization; test_backtest_golden.py
+# is the end-to-end one (verifies actual trades/pnl don't change either).
+# ---------------------------------------------------------------------------
+
+def _holders_key(h):
+    return (h.wallet, h.side, round(h.position_usd, 6), h.score_percentile, h.tier,
+            h.n_trades, h.first_active_ts, h.fetch_status,
+            round(h.avg_bet_usd, 6) if h.avg_bet_usd is not None else None,
+            h.win_rate_weighted, h.first_seen_at)
+
+
+def test_holders_at_fast_matches_holders_at_on_random_data():
+    conn = _make_conn()
+    rng = random.Random(2024)
+    cid = "c1"
+    wallets = [f"0x{i}" for i in range(6)]
+
+    for _ in range(60):
+        wallet = rng.choice(wallets)
+        side = rng.choice(["BUY", "SELL"])
+        outcome = rng.choice(["YES", "NO"])
+        _insert_trade(conn, cid, wallet, side, outcome, rng.uniform(0.1, 0.9), rng.uniform(1, 200),
+                      NOW + rng.randint(0, 30 * DAY))
+    for tok in ("tokY", "tokN"):
+        for _ in range(20):
+            _insert_price(conn, tok, cid, NOW + rng.randint(-1 * DAY, 31 * DAY), rng.uniform(0.02, 0.98))
+    for wallet in wallets:
+        for _ in range(rng.randint(0, 6)):
+            conn.execute(
+                "INSERT INTO backtest_wallet_positions (wallet, condition_id, avg_price, total_bought, "
+                "realized_pnl, cur_price, timestamp) VALUES (?,?,?,?,?,?,?)",
+                (wallet, f"other{rng.randint(0,3)}", rng.uniform(0, 1), rng.uniform(1, 500),
+                 rng.uniform(-200, 200), rng.choice([0.0, 1.0]), NOW + rng.randint(-5 * DAY, 30 * DAY)),
+            )
+        if rng.random() < 0.7:
+            conn.execute(
+                "INSERT INTO backtest_wallet_sync (wallet, synced_at, fetch_status) VALUES (?, ?, ?)",
+                (wallet, NOW, rng.choice(["ok", "error"])),
+            )
+    conn.execute(
+        "INSERT INTO backtest_market_meta (condition_id, clob_token_ids, synced_at) VALUES (?, ?, ?)",
+        (cid, json.dumps(["tokY", "tokN"]), NOW),
+    )
+    conn.commit()
+
+    checkpoints = sorted({NOW + i * 6 * 3600 for i in range(0, 100)})
+    token_for_side = {"YES": "tokY", "NO": "tokN"}
+    price_series_by_token = {"tokY": bulk_price_series(conn, "tokY"), "tokN": bulk_price_series(conn, "tokN")}
+    price_timestamps_by_token = {tok: [t for t, _ in s] for tok, s in price_series_by_token.items()}
+    by_checkpoint, first_seen = bulk_share_timeline(conn, cid, checkpoints)
+    all_wallets = list({w for (w, _o) in first_seen.keys()})
+    positions_by_wallet = bulk_wallet_positions(conn, all_wallets)
+    positions_ts_by_wallet = {w: [p.timestamp for p in plist] for w, plist in positions_by_wallet.items()}
+    fetch_status_by_wallet = bulk_fetch_status(conn, all_wallets)
+    raw_stats_cache: dict = {}
+
+    for t in checkpoints[::5]:  # sample -- _holders_at's per-call cost makes every point too slow
+        expected = sorted((_holders_key(h) for h in _holders_at(conn, cid, t)))
+        actual = sorted((_holders_key(h) for h in _holders_at_fast(
+            t, by_checkpoint.get(t, {}), first_seen, token_for_side, price_series_by_token,
+            price_timestamps_by_token, positions_by_wallet, positions_ts_by_wallet,
+            fetch_status_by_wallet, raw_stats_cache,
+        )))
+        assert actual == expected, f"mismatch at t={t}"
     conn.close()
 
 

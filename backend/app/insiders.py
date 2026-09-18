@@ -42,6 +42,7 @@ long ago tracking began.
 """
 from __future__ import annotations
 
+import bisect
 import json
 import math
 import time
@@ -179,11 +180,16 @@ def _compute_cluster_factors(holders: list, insider_cfg: cfg.InsiderConfig = cfg
     others_needed = max(1, insider_cfg.cluster_full_at - 1)
     factors = {}
     for group in by_side.values():
+        # Sort once per side, then find each holder's co-arrival count with
+        # two bisects -- O(k log k) total instead of the all-pairs O(k^2)
+        # comparison this used to do. A real insider-cluster signature (many
+        # thin/new holders arriving together) is exactly the case that used
+        # to make this the single most expensive step in a backtest checkpoint.
+        sorted_ts = sorted(h.first_seen_at for h in group)
         for h in group:
-            co_arrivals = sum(
-                1 for other in group
-                if other.wallet != h.wallet and abs(other.first_seen_at - h.first_seen_at) <= window_s
-            )
+            lo = bisect.bisect_left(sorted_ts, h.first_seen_at - window_s)
+            hi = bisect.bisect_right(sorted_ts, h.first_seen_at + window_s)
+            co_arrivals = (hi - lo) - 1  # exclude h's own timestamp
             factors[(h.wallet, h.side)] = min(1.0, co_arrivals / others_needed)
     return factors
 

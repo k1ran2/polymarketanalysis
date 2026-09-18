@@ -34,6 +34,7 @@ Methodology, and its honest limits:
 """
 from __future__ import annotations
 
+import bisect
 import dataclasses
 import json
 import random
@@ -48,7 +49,8 @@ from typing import Optional
 from . import config as cfg
 from . import db
 from .backtest_data import (
-    BacktestMarket, price_at_or_before, persist_wallet_positions,
+    BacktestMarket, bulk_fetch_status, bulk_price_series, bulk_share_timeline,
+    bulk_wallet_positions, price_at_or_before, price_at_or_before_series, persist_wallet_positions,
     reconstruct_holders_at, sync_market_meta, sync_market_trades,
     sync_price_history, wallet_positions_asof, wallets_needing_sync,
 )
@@ -496,11 +498,37 @@ def _backtest_one_market(run_id: str, condition_id: str, params: dict):
     no_edge_threshold = float(params.get("max_no_edge_entry_price") or cfg.BACKTEST.max_no_edge_entry_price)
 
     with db.db_session() as conn:
+        # Bulk-load everything the checkpoint loop below will ever need, ONCE,
+        # instead of the per-timestamp functions doing one SQL round-trip per
+        # wallet/token per checkpoint (measured: ~75% of a checkpoint's cost
+        # used to be DB round-trips, not the trade-tape scan or the scoring
+        # math itself -- see _holders_at_fast's docstring for the full
+        # reasoning, and test_backtest_golden.py for the regression check
+        # that this produces byte-identical trades to the naive per-call path).
+        token_for_side = {"YES": yes_token, "NO": no_token}
+        price_series_by_token = {
+            yes_token: bulk_price_series(conn, yes_token),
+            no_token: bulk_price_series(conn, no_token),
+        }
+        # Pre-extracted once, not per lookup -- see price_at_or_before_series's
+        # docstring for why this matters far more than it looks like it should.
+        price_timestamps_by_token = {tok: [t for t, _ in s] for tok, s in price_series_by_token.items()}
+        by_checkpoint, first_seen = bulk_share_timeline(conn, condition_id, checkpoints)
+        all_wallets = list({w for (w, _outcome) in first_seen.keys()})
+        positions_by_wallet = bulk_wallet_positions(conn, all_wallets)
+        positions_ts_by_wallet = {w: [p.timestamp for p in plist] for w, plist in positions_by_wallet.items()}
+        fetch_status_by_wallet = bulk_fetch_status(conn, all_wallets)
+        raw_stats_cache: dict = {}
+
         for t in checkpoints:
-            price_yes = price_at_or_before(conn, yes_token, t)
+            price_yes = price_at_or_before_series(price_series_by_token[yes_token], t, timestamps=price_timestamps_by_token[yes_token])
             if price_yes is None:
                 continue
-            holders = _holders_at(conn, condition_id, t)
+            holders = _holders_at_fast(
+                t, by_checkpoint.get(t, {}), first_seen, token_for_side,
+                price_series_by_token, price_timestamps_by_token, positions_by_wallet,
+                positions_ts_by_wallet, fetch_status_by_wallet, raw_stats_cache,
+            )
             if not holders:
                 continue
 
@@ -512,7 +540,7 @@ def _backtest_one_market(run_id: str, condition_id: str, params: dict):
             if signal is None:
                 continue
             side, signal_value, signal_type = signal
-            entry_price = price_yes if side == "YES" else price_at_or_before(conn, no_token, t)
+            entry_price = price_yes if side == "YES" else price_at_or_before_series(price_series_by_token[no_token], t, timestamps=price_timestamps_by_token[no_token])
             if entry_price is None or entry_price <= 0:
                 continue
             if _has_no_edge(entry_price, no_edge_threshold):
@@ -667,6 +695,77 @@ def _holders_at(conn, condition_id: str, t: int) -> list:
         for outcome, shares in sides:
             token_id = token_for_side.get(outcome)
             price = price_at_or_before(conn, token_id, t) if token_id else None
+            if price is None:
+                continue
+            position_usd = shares * price
+            if position_usd < cfg.BACKTEST.min_holder_position_usd:
+                continue
+            holders.append(Holder(
+                wallet=wallet, side=outcome, position_usd=position_usd,
+                score_percentile=score, tier=raw.tier, n_trades=raw.n,
+                first_active_ts=raw.first_active_ts, fetch_status=fetch_status,
+                avg_bet_usd=avg_bet_usd, win_rate_weighted=raw.win_rate_weighted,
+                first_seen_at=first_seen.get((wallet, outcome)),
+            ))
+    return holders
+
+
+def _holders_at_fast(
+    t: int, shares_at_t: dict, first_seen: dict, token_for_side: dict,
+    price_series_by_token: dict, price_timestamps_by_token: dict, positions_by_wallet: dict,
+    positions_ts_by_wallet: dict, fetch_status_by_wallet: dict, raw_stats_cache: dict,
+) -> list:
+    """
+    Exactly _holders_at()'s output (see test_holders_at_fast_matches_holders_at_
+    on_random_data for a direct equivalence check), built from precomputed
+    bulk structures instead of one SQL query per wallet/token per checkpoint
+    -- the dominant cost in a backtest before this fix (measured: ~75% of a
+    checkpoint's wall-clock time was DB round-trips, not the trade-tape scan
+    or the scoring math itself). See bulk_share_timeline / bulk_wallet_positions
+    / bulk_fetch_status / bulk_price_series in backtest_data.py for how the
+    inputs here are built (once per market, not once per checkpoint).
+
+    `raw_stats_cache` is a plain dict the caller creates ONCE per market and
+    passes through every checkpoint call: keyed by (wallet, prefix_len) where
+    prefix_len is how many of that wallet's positions have closed by t. A
+    wallet's trader_raw_stats()/smart_score_from_raw() output is a pure
+    function of exactly that prefix, not of t itself -- the one exception is
+    confidence_tier()'s Gold-vs-Silver split (which depends on how long ago
+    the wallet was last active RELATIVE TO t), but nothing anywhere reads
+    that distinction: only `tier == "Unrated"` (smart_score_from_raw's gate)
+    and `tier == "Bronze"` (scoring.effective_position_usd's down-weight) are
+    ever checked, and both are fully determined by n/volume alone, never by
+    t. So caching by (wallet, prefix_len) is exactly equivalent to
+    recomputing fresh every checkpoint -- and since most wallets don't close
+    a new position every single checkpoint, most checkpoints hit the cache.
+    """
+    by_wallet: dict = {}
+    for (wallet, outcome), shares in shares_at_t.items():
+        if shares <= 0:
+            continue
+        by_wallet.setdefault(wallet, []).append((outcome, shares))
+
+    holders = []
+    for wallet, sides in by_wallet.items():
+        positions = positions_by_wallet.get(wallet, [])
+        ts_list = positions_ts_by_wallet.get(wallet, [])
+        prefix_len = bisect.bisect_right(ts_list, t)
+        cache_key = (wallet, prefix_len)
+        cached = raw_stats_cache.get(cache_key)
+        if cached is None:
+            raw = trader_raw_stats(wallet, positions[:prefix_len], t)
+            score = smart_score_from_raw(raw)
+            cached = (raw, score)
+            raw_stats_cache[cache_key] = cached
+        raw, score = cached
+        fetch_status = fetch_status_by_wallet.get(wallet, "error")
+        avg_bet_usd = (raw.volume / raw.n) if raw.n else None
+
+        for outcome, shares in sides:
+            token_id = token_for_side.get(outcome)
+            series = price_series_by_token.get(token_id) if token_id else None
+            ts_list = price_timestamps_by_token.get(token_id) if token_id else None
+            price = price_at_or_before_series(series, t, timestamps=ts_list) if series is not None else None
             if price is None:
                 continue
             position_usd = shares * price

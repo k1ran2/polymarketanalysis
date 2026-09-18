@@ -1,0 +1,292 @@
+{
+  "condition_ids": [
+    "0x0010e9aa3b2a466703a2744a50a5101d11f1eaf1b6a4ebd80a68418ef57f5cf6",
+    "0x004e19d419d05dd366793689ce2af457d51bc921d9da4af867de09f0864a4305",
+    "0x0221121b0f6acc9552c43795bac9b0fcc4e7ea0ea9b717b33372b7795f1ac25d",
+    "0x02dc46f4354c1cc447577db82ba62cca1bda737bd67b73fe966ce1bfe580868f",
+    "0x02ecadc1573b897e74b1150db0099005a678f863bc8cab793410e8eb9e962ad8",
+    "0x030ffc12d4619622e3d318526e306008bc1fbf982fe95e92b649c9f40a135ad3",
+    "0x039b48827f3c6b83f50153715af8a66f2b74b04fcfc5def13acb3f151eeb3d81",
+    "0x03ec83b8b1dc87d3c2b1c2c89535a344d859f25fa350801d63d2e1217827215b",
+    "0x03f39d85204b2480747e2d199bc38b724a88f7792273d701f2f64f6a02246c7f",
+    "0x046e77ee08cb4fc2732afc04105b13be93f638087219b590fee7fa11b95cb6f8",
+    "0x04787bbd66241501604f377f11b897879c1593b019bb3363dac0a73e99b4a131",
+    "0x06a804e8bd1a539829b7db279ad33b2cf0bcf98f315a3b3a8c7623e6230d88fd"
+  ],
+  "insider": {
+    "params": {
+      "condition_ids": [
+        "0x0010e9aa3b2a466703a2744a50a5101d11f1eaf1b6a4ebd80a68418ef57f5cf6",
+        "0x004e19d419d05dd366793689ce2af457d51bc921d9da4af867de09f0864a4305",
+        "0x0221121b0f6acc9552c43795bac9b0fcc4e7ea0ea9b717b33372b7795f1ac25d",
+        "0x02dc46f4354c1cc447577db82ba62cca1bda737bd67b73fe966ce1bfe580868f",
+        "0x02ecadc1573b897e74b1150db0099005a678f863bc8cab793410e8eb9e962ad8",
+        "0x030ffc12d4619622e3d318526e306008bc1fbf982fe95e92b649c9f40a135ad3",
+        "0x039b48827f3c6b83f50153715af8a66f2b74b04fcfc5def13acb3f151eeb3d81",
+        "0x03ec83b8b1dc87d3c2b1c2c89535a344d859f25fa350801d63d2e1217827215b",
+        "0x03f39d85204b2480747e2d199bc38b724a88f7792273d701f2f64f6a02246c7f",
+        "0x046e77ee08cb4fc2732afc04105b13be93f638087219b590fee7fa11b95cb6f8",
+        "0x04787bbd66241501604f377f11b897879c1593b019bb3363dac0a73e99b4a131",
+        "0x06a804e8bd1a539829b7db279ad33b2cf0bcf98f315a3b3a8c7623e6230d88fd"
+      ],
+      "insider_overrides": null,
+      "market_selection": null,
+      "max_no_edge_entry_price": null,
+      "min_conviction": 70.0,
+      "min_signal_strength": "strong_buy",
+      "stake_usd": 100.0,
+      "strategy": "insider",
+      "verdict_overrides": null
+    },
+    "summary": {
+      "avg_pnl_usd": 1.29,
+      "by_category": {
+        "Uncategorized": {
+          "n": 7,
+          "pnl_usd": 9.05,
+          "win_rate": 0.8571,
+          "wins": 6
+        }
+      },
+      "by_signal_type": {
+        "insider": {
+          "n": 7,
+          "pnl_usd": 9.05,
+          "roi_pct": 1.29,
+          "staked_usd": 700.0,
+          "win_rate": 0.8571,
+          "wins": 6
+        }
+      },
+      "n_trades": 7,
+      "roi_pct": 1.29,
+      "total_pnl_usd": 9.05,
+      "total_staked_usd": 700.0,
+      "win_rate": 0.8571
+    },
+    "trades": [
+      {
+        "category": null,
+        "condition_id": "0x0221121b0f6acc9552c43795bac9b0fcc4e7ea0ea9b717b33372b7795f1ac25d",
+        "entry_price": 0.955,
+        "pnl_pct": 0.047120418848167575,
+        "pnl_usd": 4.712041884816758,
+        "question": "Was Trump hacked?",
+        "resolved_yes": 0,
+        "shares": 104.71204188481676,
+        "side": "NO",
+        "signal_ts": 1737191156,
+        "signal_type": "insider",
+        "signal_value": 81.9,
+        "stake_usd": 100.0,
+        "won": 1
+      },
+      {
+        "category": null,
+        "condition_id": "0x02dc46f4354c1cc447577db82ba62cca1bda737bd67b73fe966ce1bfe580868f",
+        "entry_price": 0.9775,
+        "pnl_pct": 0.023017902813299195,
+        "pnl_usd": 2.3017902813299194,
+        "question": "No change in Fed interest rates after September 2025 meeting?",
+        "resolved_yes": 0,
+        "shares": 102.30179028132991,
+        "side": "NO",
+        "signal_ts": 1757913068,
+        "signal_type": "insider",
+        "signal_value": 87.3,
+        "stake_usd": 100.0,
+        "won": 1
+      },
+      {
+        "category": null,
+        "condition_id": "0x02ecadc1573b897e74b1150db0099005a678f863bc8cab793410e8eb9e962ad8",
+        "entry_price": 0.72,
+        "pnl_pct": 0.38888888888888895,
+        "pnl_usd": 38.88888888888889,
+        "question": "Will GPT-5 be released by August 10?",
+        "resolved_yes": 1,
+        "shares": 138.88888888888889,
+        "side": "YES",
+        "signal_ts": 1754330376,
+        "signal_type": "insider",
+        "signal_value": 72.7,
+        "stake_usd": 100.0,
+        "won": 1
+      },
+      {
+        "category": null,
+        "condition_id": "0x03ec83b8b1dc87d3c2b1c2c89535a344d859f25fa350801d63d2e1217827215b",
+        "entry_price": 0.895,
+        "pnl_pct": 0.11731843575418992,
+        "pnl_usd": 11.731843575418992,
+        "question": "Will edgeX launch a token in 2025?",
+        "resolved_yes": 1,
+        "shares": 111.73184357541899,
+        "side": "YES",
+        "signal_ts": 1766441812,
+        "signal_type": "insider",
+        "signal_value": 75.1,
+        "stake_usd": 100.0,
+        "won": 1
+      },
+      {
+        "category": null,
+        "condition_id": "0x03f39d85204b2480747e2d199bc38b724a88f7792273d701f2f64f6a02246c7f",
+        "entry_price": 0.695,
+        "pnl_pct": 0.4388489208633095,
+        "pnl_usd": 43.88489208633095,
+        "question": "Will GPT-5 be released by August 15?",
+        "resolved_yes": 1,
+        "shares": 143.88489208633095,
+        "side": "YES",
+        "signal_ts": 1753952665,
+        "signal_type": "insider",
+        "signal_value": 74.9,
+        "stake_usd": 100.0,
+        "won": 1
+      },
+      {
+        "category": null,
+        "condition_id": "0x04787bbd66241501604f377f11b897879c1593b019bb3363dac0a73e99b4a131",
+        "entry_price": 0.93,
+        "pnl_pct": 0.07526881720430102,
+        "pnl_usd": 7.526881720430102,
+        "question": "Will Fed cut interest rates 0 times in 2024?",
+        "resolved_yes": 0,
+        "shares": 107.5268817204301,
+        "side": "NO",
+        "signal_ts": 1721213069,
+        "signal_type": "insider",
+        "signal_value": 72.1,
+        "stake_usd": 100.0,
+        "won": 1
+      },
+      {
+        "category": null,
+        "condition_id": "0x06a804e8bd1a539829b7db279ad33b2cf0bcf98f315a3b3a8c7623e6230d88fd",
+        "entry_price": 0.73,
+        "pnl_pct": -1.0,
+        "pnl_usd": -100.0,
+        "question": "Will Bitcoin reach $80,000 in April?",
+        "resolved_yes": 0,
+        "shares": 136.986301369863,
+        "side": "YES",
+        "signal_ts": 1777261643,
+        "signal_type": "insider",
+        "signal_value": 75.4,
+        "stake_usd": 100.0,
+        "won": 0
+      }
+    ]
+  },
+  "smart_money": {
+    "params": {
+      "condition_ids": [
+        "0x0010e9aa3b2a466703a2744a50a5101d11f1eaf1b6a4ebd80a68418ef57f5cf6",
+        "0x004e19d419d05dd366793689ce2af457d51bc921d9da4af867de09f0864a4305",
+        "0x0221121b0f6acc9552c43795bac9b0fcc4e7ea0ea9b717b33372b7795f1ac25d",
+        "0x02dc46f4354c1cc447577db82ba62cca1bda737bd67b73fe966ce1bfe580868f",
+        "0x02ecadc1573b897e74b1150db0099005a678f863bc8cab793410e8eb9e962ad8",
+        "0x030ffc12d4619622e3d318526e306008bc1fbf982fe95e92b649c9f40a135ad3",
+        "0x039b48827f3c6b83f50153715af8a66f2b74b04fcfc5def13acb3f151eeb3d81",
+        "0x03ec83b8b1dc87d3c2b1c2c89535a344d859f25fa350801d63d2e1217827215b",
+        "0x03f39d85204b2480747e2d199bc38b724a88f7792273d701f2f64f6a02246c7f",
+        "0x046e77ee08cb4fc2732afc04105b13be93f638087219b590fee7fa11b95cb6f8",
+        "0x04787bbd66241501604f377f11b897879c1593b019bb3363dac0a73e99b4a131",
+        "0x06a804e8bd1a539829b7db279ad33b2cf0bcf98f315a3b3a8c7623e6230d88fd"
+      ],
+      "insider_overrides": null,
+      "market_selection": null,
+      "max_no_edge_entry_price": null,
+      "min_conviction": 50.0,
+      "min_signal_strength": "lean",
+      "stake_usd": 100.0,
+      "strategy": "smart_money",
+      "verdict_overrides": null
+    },
+    "summary": {
+      "avg_pnl_usd": 10.68,
+      "by_category": {
+        "Uncategorized": {
+          "n": 3,
+          "pnl_usd": 32.03,
+          "win_rate": 0.6667,
+          "wins": 2
+        }
+      },
+      "by_signal_type": {
+        "lean": {
+          "n": 2,
+          "pnl_usd": -97.85,
+          "roi_pct": -48.93,
+          "staked_usd": 200.0,
+          "win_rate": 0.5,
+          "wins": 1
+        },
+        "strong_buy": {
+          "n": 1,
+          "pnl_usd": 129.89,
+          "roi_pct": 129.89,
+          "staked_usd": 100.0,
+          "win_rate": 1.0,
+          "wins": 1
+        }
+      },
+      "n_trades": 3,
+      "roi_pct": 10.68,
+      "total_pnl_usd": 32.03,
+      "total_staked_usd": 300.0,
+      "win_rate": 0.6667
+    },
+    "trades": [
+      {
+        "category": null,
+        "condition_id": "0x046e77ee08cb4fc2732afc04105b13be93f638087219b590fee7fa11b95cb6f8",
+        "entry_price": 0.979,
+        "pnl_pct": 0.021450459652706862,
+        "pnl_usd": 2.145045965270686,
+        "question": "Will Bryn Kenney win the 2025 National Heads-Up Poker Championship?",
+        "resolved_yes": 0,
+        "shares": 102.14504596527068,
+        "side": "NO",
+        "signal_ts": 1761778586,
+        "signal_type": "lean",
+        "signal_value": 50.3,
+        "stake_usd": 100.0,
+        "won": 1
+      },
+      {
+        "category": null,
+        "condition_id": "0x04787bbd66241501604f377f11b897879c1593b019bb3363dac0a73e99b4a131",
+        "entry_price": 0.335,
+        "pnl_pct": -0.9999999999999999,
+        "pnl_usd": -99.99999999999999,
+        "question": "Will Fed cut interest rates 0 times in 2024?",
+        "resolved_yes": 0,
+        "shares": 298.5074626865671,
+        "side": "YES",
+        "signal_ts": 1713696269,
+        "signal_type": "lean",
+        "signal_value": 50.1,
+        "stake_usd": 100.0,
+        "won": 0
+      },
+      {
+        "category": null,
+        "condition_id": "0x06a804e8bd1a539829b7db279ad33b2cf0bcf98f315a3b3a8c7623e6230d88fd",
+        "entry_price": 0.435,
+        "pnl_pct": 1.2988505747126435,
+        "pnl_usd": 129.88505747126436,
+        "question": "Will Bitcoin reach $80,000 in April?",
+        "resolved_yes": 0,
+        "shares": 229.88505747126436,
+        "side": "NO",
+        "signal_ts": 1776937643,
+        "signal_type": "strong_buy",
+        "signal_value": 79.3,
+        "stake_usd": 100.0,
+        "won": 1
+      }
+    ]
+  }
+}
