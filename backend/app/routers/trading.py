@@ -1,16 +1,17 @@
 """
 Live trading API -- every route here requires the X-Local-Token header (see
 app.local_auth for why CORS alone isn't enough once money-shaped endpoints
-exist). Credential storage/order-placement endpoints are NOT here yet --
-see this project's trading build order: schema -> risk caps -> watcher
-against a mock trader (this router) -> credentials -> real order
-construction, in that sequence, credentials last.
+exist). Trading build order: schema -> risk caps -> watcher against a mock
+trader -> credential storage (this router now covers all of that) -> real
+order construction/signing, which does NOT exist yet -- see clob_trader.py
+(not built). Storing a private key here has no effect on any trade: the
+watcher only ever talks to MockTrader regardless of whether credentials are
+connected, until real order-signing code exists to use them.
 
 Every trade reachable through this router today is, by construction, fake
 -- app.trade_watcher.MockTrader is the only trader implementation that
 exists. GET /status's `mock_mode: true` is not a display choice, it's a
-fact: there is no code path in this codebase yet that can submit a real
-order.
+fact, independent of `credentials_configured`.
 """
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from .. import db
+from .. import trading_credentials as creds
 from ..local_auth import require_local_token
 from ..trade_tracker import summarize_trades
 from ..trade_watcher import MockTrader, get_or_create_day_ledger, get_settings, start_manual_scan, status as watcher_status
@@ -75,11 +77,12 @@ def get_status():
         open_rows = conn.execute(
             "SELECT cost_usd, requested_stake_usd FROM trades WHERE status IN ('pending','submitted','filled','partial')"
         ).fetchall()
+        cred_status = creds.get_status(conn)
     open_exposure = sum((r["cost_usd"] or r["requested_stake_usd"] or 0.0) for r in open_rows)
     return {
         "enabled": bool(settings.get("enabled", False)),
-        "mock_mode": True,  # no credentials/real trader exist yet -- see module docstring
-        "credentials_configured": False,
+        "mock_mode": True,  # no real order-signing code exists yet -- see module docstring
+        "credentials_configured": cred_status["configured"],
         "halted_today": bool(ledger["halted"]),
         "halted_reason": ledger["halted_reason"],
         "today": {
@@ -116,6 +119,55 @@ def put_trading_settings(body: TradingSettingsIn):
         )
         settings = get_settings(conn)
     return settings
+
+
+class ConnectCredentialsIn(BaseModel):
+    private_key: str = Field(min_length=32, description="Your wallet's private key -- paste it here, never anywhere else")
+    funder_address: Optional[str] = Field(default=None, description="Only needed for a Polymarket proxy/Gnosis Safe wallet -- leave blank for a plain wallet")
+    signature_type: int = Field(default=0, ge=0, le=2, description="0 = plain EOA wallet, 1 = Polymarket proxy, 2 = Gnosis Safe")
+
+
+@router.get("/credentials")
+def get_credentials_status():
+    """Public info only -- signer/funder address, whether a key is stored.
+    NEVER the key itself, encrypted or not -- see app.trading_credentials'
+    module docstring."""
+    with db.db_session() as conn:
+        return creds.get_status(conn)
+
+
+@router.post("/credentials")
+def connect_credentials(body: ConnectCredentialsIn):
+    """
+    Stores your private key, encrypted, on this machine only -- see
+    app.crypto_store and app.trading_credentials for exactly how, and the
+    Trading page's connect-wallet copy for why a DEDICATED wallet (funded
+    only with money you'd accept losing) is the real safety control here,
+    not the encryption.
+
+    This alone does not enable any trade: there is no order-signing code in
+    this codebase yet (see this router's module docstring) -- the watcher
+    still only ever talks to MockTrader regardless of whether credentials
+    are connected.
+    """
+    try:
+        with db.db_session() as conn:
+            result = creds.save_credentials(
+                conn, body.private_key, funder_address=body.funder_address, signature_type=body.signature_type,
+            )
+    except creds.InvalidPrivateKeyError as e:
+        raise HTTPException(400, str(e)) from e
+    return result
+
+
+@router.delete("/credentials")
+def disconnect_credentials():
+    """Deletes the stored credentials and wipes the encryption key -- even
+    a surviving backup of the database becomes permanently undecryptable
+    after this."""
+    with db.db_session() as conn:
+        creds.clear_credentials(conn)
+    return {"configured": False}
 
 
 @router.post("/pause")
