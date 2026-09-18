@@ -1,0 +1,254 @@
+{
+  "0x5e464d85eb49f22d876f3ed6168a7db5e2288e9ae1eb91effd2758e994676f86": [
+    {
+      "token": "97186030785608128217926542396950266594898339988989015155120280107165449433603",
+      "holders": [
+        {
+          "proxyWallet": "0x859b4303ce5ae7d6fd43bc118d807a01b37f31b8",
+          "amount": 2159167.050241
+        },
+        {
+          "proxyWallet": "0x0bb8a71b7ed93265c8045640fb3aa1eb93ad253e",
+          "amount": 1379486.962605
+        },
+        {
+          "proxyWallet": "0x58b3380f71bd6c706dd398a5e60bde55fa3a653c",
+          "amount": 959420.72546
+        },
+        {
+          "proxyWallet": "0xa1d6f2626f455848eb2332fe56f1f3d7263de727",
+          "amount": 599999.528
+        },
+        {
+          "proxyWallet": "0x92ae45626388343e6fe1f2d03c109d04bc3c0376",
+          "amount": 300000
+        },
+        {
+          "proxyWallet": "0xc18bd4097fd387387030ef63542785c455279491",
+          "amount": 244586.459089
+        },
+        {
+          "proxyWallet": "0xde242261bcd8d4320113f12230da34d705ca25a8",
+          "amount": 200000
+        },
+        {
+          "proxyWallet": "0x1b204194287459c08d6494f386eddf74a14fe68b",
+          "amount": 177707.659187
+        },
+        {
+          "proxyWallet": "0x856f3a22368a9e33aee5f45cbc11a66d4d5d2f64",
+          "amount": 169896.357839
+        },
+        {
+          "proxyWallet": "0xe9076a87c5ed90ef16e6fe6529c943baeca0cff6",
+          "amount": 155934.646669
+        },
+        {
+          "proxyWallet": "0x3527c248e8ce4b29a3c8c90857c3204beac7150f",
+          "amount": 121666.666666
+        },
+        {
+          "proxyWallet": "0x447fec5ca2a21c1e5512319d88244c33fe3ba05e",
+          "amount": 121114.8131
+        },
+        {
+          "proxyWallet": "0x50ef0c1ad55b07d583335853f96122c06efc5e6e",
+          "amount": 100000
+        },
+        {
+          "proxyWallet": "0x8ba7284ca01874a7c0b9e5bc279ef028737584e9",
+          "amount": 100000
+        },
+        {
+          "proxyWallet": "0xd0394bd0de8d901c3fde039a86bf08e6aa4a2532",
+          "amount": 97000
+        },
+        {
+          "proxyWallet": "0x029df49e0611c8c2f21d419a6211ddb260001d43",
+          "amount": 92878.068
+        },
+        {
+          "proxyWallet": "0x0c0e270cf879583d6a0142fc817e05b768d0434e",
+          "amount": 79999.9642
+        },
+        {
+          "proxyWallet": "0x3a3cfd23375764606569d1f166ec3d14eca70283",
+          "amount": 77811.186664
+        },
+        {
+          "proxyWallet": "0x0fc84320d86bf924337604c16794e85515486e94",
+          "amount": 70452.5
+        },
+        {
+          "proxyWallet": "0xa55c6491bcc5f34194a0e808d4a0e38460218272",
+          "amount": 53499.999999
+        },
+        {
+          "proxyWallet": "0xa4969dd8f7f13e5c1af4e22d104b8c013f770f5a",
+          "amount": 52085
+        },
+        {
+          "proxyWallet": "0x4207c4f53b785c6d0d48512a497ebd845c29b81b",
+          "amount": 48093.661609
+        },
+        {
+          "proxyWallet": "0x6b3a9ab651f1e482acf5050b84d0e9d4d4fcfcbd",
+          "amount": 44266.666666
+        },
+        {
+          "proxyWallet": "0x9478e0b0db650ac66ca3a2c9f6ed68ebca4863f5",
+          "amount": 44195.463102
+        },
+        {
+          "proxyWallet": "0x2e0b70d482e6b389e81dea528be57d825dd48070",
+          "amount": 40544.23
+        },
+        {
+          "proxyWallet": "0xbc54e69667ceb6ccec538e5a0ba1927fc1fe680f",
+          "amount": 39999.917025
+        },
+        {
+          "proxyWallet": "0x7b12794b1756039e9e7a51815e86abd6e3bbc3ac",
+          "amount": 35000
+        },
+        {
+          "proxyWallet": "0x95b4107bdf21dd81341c64298d47cf1cb3b912e2",
+          "amount": 32562.506665
+        },
+        {
+          "proxyWallet": "0x3cc39fb67e58ed39b20efd83555da594b2e790e4",
+          "amount": 27705
+        },
+        {
+          "proxyWallet": "0xb7e60df7408850a820c92393ec82f6392e84d9e3",
+          "amount": 27353.571582
+        }
+      ]
+    },
+    {
+      "token": "81470465080656150088482886298356783621062802919110096763062861781139262816347",
+      "holders": [
+        {
+          "proxyWallet": "0xa5ef39c3d3e10d0b270233af41cac69796b12966",
+          "amount": 8230520.085267
+        },
+        {
+          "proxyWallet": "0xed107a85a4585a381e48c7f7ca4144909e7dd2e5",
+          "amount": 28786.349089
+        },
+        {
+          "proxyWallet": "0x027e587a1086809d1a00f22216bef6a808f1c97f",
+          "amount": 10680.442844
+        },
+        {
+          "proxyWallet": "0x41c71e6daf8fb1a4ae199ecb4f54cbdf3a5c0df5",
+          "amount": 6000
+        },
+        {
+          "proxyWallet": "0xa66790e2b0075e73c3781ddaf1d0b875a3aaceb3",
+          "amount": 5275.74
+        },
+        {
+          "proxyWallet": "0x6d1bb3eccaf954322b02a3a87e6f0f0745d51bec",
+          "amount": 4279
+        },
+        {
+          "proxyWallet": "0x032eb1bc893940263ad0b01889f262fc232f2a9e",
+          "amount": 2484
+        },
+        {
+          "proxyWallet": "0xa8af4c7923857533b687df9bf02115156e3a325e",
+          "amount": 2000
+        },
+        {
+          "proxyWallet": "0xadbc2422aa9694fb47a7eae6b52d16f76c2f7784",
+          "amount": 2000
+        },
+        {
+          "proxyWallet": "0x107f6c8c78c66f1d3a281cbf504e4c3c5562bb8c",
+          "amount": 1500
+        },
+        {
+          "proxyWallet": "0x75213070b82165782e5bed65a0e63fb73a565ee5",
+          "amount": 1411.318318
+        },
+        {
+          "proxyWallet": "0xb8c7352034cab6f89b0395da3cc41ebd899f8344",
+          "amount": 1333.33332
+        },
+        {
+          "proxyWallet": "0xdba9abeff4f0ba58f53ade4c3cdbf90c40d3c35b",
+          "amount": 1330.603869
+        },
+        {
+          "proxyWallet": "0x066e5688d2cc75f02423a2384f14b50e554032ff",
+          "amount": 1315.789416
+        },
+        {
+          "proxyWallet": "0xff422d3ad375cae4da83ffa033a5dadb3712f515",
+          "amount": 1313.1313
+        },
+        {
+          "proxyWallet": "0x5903c7dd90cf2674026ac49b8e434c0e65c853d4",
+          "amount": 1059.535777
+        },
+        {
+          "proxyWallet": "0xd1c769317bd15de7768a70d0214cf0bbcc531d2b",
+          "amount": 1000
+        },
+        {
+          "proxyWallet": "0x39aaed185b92e99a78249610cc14a589b764583c",
+          "amount": 986.56
+        },
+        {
+          "proxyWallet": "0x3825180182703613f3619d4611890c5b655504e8",
+          "amount": 855.11
+        },
+        {
+          "proxyWallet": "0xe639e41094bbeae18f3e6d1790c17299183f082a",
+          "amount": 696.82
+        },
+        {
+          "proxyWallet": "0x24aa8a25797838c48198705bda410567528858a0",
+          "amount": 637.65175
+        },
+        {
+          "proxyWallet": "0x7e3149ce0481eb65e2261ecf3d70c987d4d51c97",
+          "amount": 504.540777
+        },
+        {
+          "proxyWallet": "0x9d9a6e0a981bc3d81ed837f52625d4cb829df083",
+          "amount": 504.540777
+        },
+        {
+          "proxyWallet": "0x04b954ec5d65e0a855d31b5e695083f3c4ad79e0",
+          "amount": 500
+        },
+        {
+          "proxyWallet": "0x1dd197fa8bb4d6887ffecf89b75171aea7d7a156",
+          "amount": 500
+        },
+        {
+          "proxyWallet": "0xd9fe6f0f41ca99fefa93c55d8890000e5a84db0d",
+          "amount": 486.603332
+        },
+        {
+          "proxyWallet": "0x48e74b759a694d156eaf7c7e542094e0585d4641",
+          "amount": 450
+        },
+        {
+          "proxyWallet": "0xe5544c9c6fb07e417fdfa9a3e100d1446aa8ce6f",
+          "amount": 423.814222
+        },
+        {
+          "proxyWallet": "0xbd1e2886c2d0dc9381c80206bddd5dc447bbaf43",
+          "amount": 400
+        },
+        {
+          "proxyWallet": "0xe26da87b1a361e853ecdd1e6679de0a355bbe890",
+          "amount": 400
+        }
+      ]
+    }
+  ]
+}

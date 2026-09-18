@@ -1,0 +1,142 @@
+[
+  {
+    "id": "481717",
+    "tags": [
+      {
+        "label": "fomc"
+      },
+      {
+        "label": "Economic Policy"
+      },
+      {
+        "label": "Fed Rates"
+      },
+      {
+        "label": "Jerome Powell"
+      },
+      {
+        "label": "Politics"
+      },
+      {
+        "label": "Fed"
+      },
+      {
+        "label": "Economy"
+      },
+      {
+        "label": "CPI Release"
+      }
+    ],
+    "volume24hr": 87106712.0,
+    "liquidity": 350000.0,
+    "markets": [
+      {
+        "conditionId": "0x5e464d85eb49f22d876f3ed6168a7db5e2288e9ae1eb91effd2758e994676f86",
+        "question": "Will the Fed decrease interest rates by 50+ bps after the September 2026 meeting?",
+        "slug": "will-the-fed-decrease-interest-rates-by-50-bps-after-the-september-2026-meeting-863",
+        "outcomes": "[\"Yes\", \"No\"]",
+        "outcomePrices": "[\"0.0015\", \"0.9985\"]",
+        "clobTokenIds": "[\"97186030785608128217926542396950266594898339988989015155120280107165449433603\", \"81470465080656150088482886298356783621062802919110096763062861781139262816347\"]",
+        "volumeNum": 10686125.782784993,
+        "active": true,
+        "closed": false
+      },
+      {
+        "conditionId": "0xac02cbb049e46d6a3627c0fdf52fa554982a9025d45968207b362acb6ca4b830",
+        "question": "Will the Fed decrease interest rates by 25 bps after the September 2026 meeting?",
+        "slug": "will-the-fed-decrease-interest-rates-by-25-bps-after-the-september-2026-meeting-586",
+        "outcomes": "[\"Yes\", \"No\"]",
+        "outcomePrices": "[\"0.0055\", \"0.9945\"]",
+        "clobTokenIds": "[\"57748138085022719760345772310040703848567377822400132842014290209986511882046\", \"28239418772633645184924651434956000849078365566842629564562475378531350731731\"]",
+        "volumeNum": 24237423.715565987,
+        "active": true,
+        "closed": false
+      },
+      {
+        "conditionId": "0xa3b36b2d6104d34af4e6c6215fc818e43352e78a748fbfb0b85e3a35f71dec9a",
+        "question": "Will there be no change in Fed interest rates after the September 2026 meeting?",
+        "slug": "will-there-be-no-change-in-fed-interest-rates-after-the-september-2026-meeting-615",
+        "outcomes": "[\"Yes\", \"No\"]",
+        "outcomePrices": "[\"0.595\", \"0.405\"]",
+        "clobTokenIds": "[\"5615282760875985231868508008056959876238536896643315063916840237042205273721\", \"97050921740416192996389806693742575608111328819185493163189880975611314813724\"]",
+        "volumeNum": 21643582.53156607,
+        "active": true,
+        "closed": false
+      },
+      {
+        "conditionId": "0x876506d8b2bd7a0d3fa4fe18c024eee6e1dd81ee24c26795dadd6cfe4a7b5d0d",
+        "question": "Will the Fed increase interest rates by 25 bps after the September 2026 meeting?",
+        "slug": "will-the-fed-increase-interest-rates-by-25-bps-after-the-september-2026-meeting-649",
+        "outcomes": "[\"Yes\", \"No\"]",
+        "outcomePrices": "[\"0.405\", \"0.595\"]",
+        "clobTokenIds": "[\"63842529068710005716169325380315470359047749786610778647370693404952498013178\", \"2881957189963819690709899387312951271986076905757701114514025622922000576600\"]",
+        "volumeNum": 17654810.456361003,
+        "active": true,
+        "closed": false
+      },
+      {
+        "conditionId": "0x2e4b58fc18dbffd74d5275d89fb076943f21992763c45dcadd81391b83bde13c",
+        "question": "Will the Fed increase interest rates by 50+ bps after the September 2026 meeting?",
+        "slug": "will-the-fed-increase-interest-rates-by-50-bps-after-the-september-2026-meeting-664",
+        "outcomes": "[\"Yes\", \"No\"]",
+        "outcomePrices": "[\"0.0055\", \"0.9945\"]",
+        "clobTokenIds": "[\"88912926533493988427719291698947688154042720958310632316541141466409683822293\", \"74195220586129237349258803179082634542284503538320000637909015632982564961602\"]",
+        "volumeNum": 12884769.668772006,
+        "active": true,
+        "closed": false
+      }
+    ]
+  },
+  {
+    "id": "959064",
+    "tags": [],
+    "volume24hr": 2752991.0,
+    "liquidity": 45000.0,
+    "markets": [
+      {
+        "conditionId": "0x40b0a074d1e4dc4fce79abce1e7dad60dbe5b4963fd1b880a665ab97731d532c",
+        "question": "LoL: KT Rolster vs Dplus KIA - Game 1 Winner",
+        "slug": "lol-kt-dk-2026-09-04-game1",
+        "outcomes": "[\"KT Rolster\", \"Dplus KIA\"]",
+        "outcomePrices": "[\"0.9995\", \"0.0005\"]",
+        "clobTokenIds": "[\"15354890969194254272824151255962277250728585276316365105378768361706708826492\", \"62672168193062352870560604554403266386188308707319420977725725514385371467709\"]",
+        "volumeNum": 1628702.1878009988,
+        "active": true,
+        "closed": false
+      },
+      {
+        "conditionId": "0x3d96fd4fab2f12358ebe188943df122b6b1b9af0d25e841863509e66a63a5106",
+        "question": "LoL: KT Rolster vs Dplus KIA - Game 2 Winner",
+        "slug": "lol-kt-dk-2026-09-04-game2",
+        "outcomes": "[\"KT Rolster\", \"Dplus KIA\"]",
+        "outcomePrices": "[\"0.455\", \"0.545\"]",
+        "clobTokenIds": "[\"1504109542054447838610934688047217640227256222470245135878960353361124243719\", \"36680883732450441004748997983679451996902510844315794018094171841790760858348\"]",
+        "volumeNum": 49593.847464,
+        "active": true,
+        "closed": false
+      },
+      {
+        "conditionId": "0x13afbe6895545f5fa6108b7bf4e0feea5206a218ae4af902bf0af8e2b890bc1c",
+        "question": "LoL: KT Rolster vs Dplus KIA (BO5) - LCK Playoffs",
+        "slug": "lol-kt-dk-2026-09-04",
+        "outcomes": "[\"KT Rolster\", \"Dplus KIA\"]",
+        "outcomePrices": "[\"0.585\", \"0.415\"]",
+        "clobTokenIds": "[\"43403521490232945660273709440641091826659238868564265893561483222733782043084\", \"5454295491301874349387948126801828264590248670968619517190461393713061242522\"]",
+        "volumeNum": 993451.9106779991,
+        "active": true,
+        "closed": false
+      },
+      {
+        "conditionId": "0xef5ce432888b3523386994c303cfe987c4458c4abec139a860daf6ce01da8366",
+        "question": "Game Handicap: DK (-1.5) vs KT Rolster (+1.5)",
+        "slug": "lol-kt-dk-2026-09-04-game-handicap-home-1pt5",
+        "outcomes": "[\"Dplus KIA\", \"KT Rolster\"]",
+        "outcomePrices": "[\"0.165\", \"0.835\"]",
+        "clobTokenIds": "[\"80914714694700247513186189422677148079002763861926175338872764267980730814075\", \"18015303934536313397041971736903135072168157364687539572686589325332275382433\"]",
+        "volumeNum": 81259.889171,
+        "active": true,
+        "closed": false
+      }
+    ]
+  }
+]

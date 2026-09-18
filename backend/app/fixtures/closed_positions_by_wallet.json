@@ -1,0 +1,561 @@
+{
+  "0x56687bf447db6ffa42ffe2204a05edaa20f55839": [
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "42699080635179861375280720242213672850141860123562672932351602811041149946128",
+      "conditionId": "0xcd1b6b71a1964f15e2c14809594cbfa0d576270e8ef94c8c24913121097e09e5",
+      "avgPrice": 0.3695,
+      "totalBought": 13175255.227,
+      "realizedPnl": 8303171.2313,
+      "curPrice": 1,
+      "title": "Will Donald Trump win the popular vote in the 2024 Presidential Election?",
+      "outcomeIndex": 0,
+      "timestamp": 1731423425
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "43898019188443109254544011644141095748327433947336326565220861409147408981284",
+      "conditionId": "0x265366ede72d73e137b2b9095a6cdc9be6149290caa295738a95e3d881ad0865",
+      "avgPrice": 0.3742,
+      "totalBought": 9686804.5798,
+      "realizedPnl": 6061140.1804,
+      "curPrice": 1,
+      "outcomeIndex": 1,
+      "timestamp": 1731405799
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "21742633143463906290569050155826241533067272736897614950488156847949938836455",
+      "conditionId": "0xdd22472e552920b8438158ea7238bfadfa4f736aa4cee91a6b86c39ead110917",
+      "avgPrice": 0.6011,
+      "totalBought": 14943467.6577,
+      "realizedPnl": 5872184.9461,
+      "curPrice": 1,
+      "outcomeIndex": 0,
+      "timestamp": 1730924464
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "67648321332889562720702742465853245863647268672651902649177972067583993370930",
+      "conditionId": "0x2010ff3939e8e664dd57369aa907bbaa6d03ae18be27fe3ab2f4cdcb95a8b2ab",
+      "avgPrice": 0.3487,
+      "totalBought": 1788194.2689,
+      "realizedPnl": 1164645.5628,
+      "curPrice": 1,
+      "outcomeIndex": 0,
+      "timestamp": 1730940550
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "87584955359245246404952128082451897287778571240979823316620093987046202296181",
+      "conditionId": "0xc6485bb7ea46d7bb89beb9c91e7572ecfc72a6273789496f78bc5e989e4d1638",
+      "avgPrice": 0.6521,
+      "totalBought": 1841792.298,
+      "realizedPnl": 380800.1866,
+      "curPrice": 1,
+      "outcomeIndex": 1,
+      "timestamp": 1730924482
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "67089287271692871221799799486468743524636060540186332703509386944410510992981",
+      "conditionId": "0x02bc0bbff054877a08cdc4f9ccf4e7606804bc05c27f5faccf26c6e1666a5558",
+      "avgPrice": 0.6054,
+      "totalBought": 213746.6784,
+      "realizedPnl": 84342.0881,
+      "curPrice": 1,
+      "outcomeIndex": 1,
+      "timestamp": 1730984008
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "65444287174436666395099524416802980027579283433860283898747701594488689243696",
+      "conditionId": "0x26ee82bee2493a302d21283cb578f7e2fff2dd15743854f53034d12420863b55",
+      "avgPrice": 0.5798,
+      "totalBought": 128087.7388,
+      "realizedPnl": 50108.6175,
+      "curPrice": 1,
+      "outcomeIndex": 1,
+      "timestamp": 1731628696
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "75951511934878014812323289513632732239356274541965522720897159608390126393735",
+      "conditionId": "0xa923afcb8297e3ade170f2f8c088f3c277557fadef2c67054d72cc59f8504b2b",
+      "avgPrice": 0.6,
+      "totalBought": 177494.336,
+      "realizedPnl": 49389.3493,
+      "curPrice": 1,
+      "outcomeIndex": 0,
+      "timestamp": 1730969808
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "8506489790932625039746959405160059426243994232527626857062384302531008283468",
+      "conditionId": "0xa59e2e79dc1a564477c8d77dc32c30b37c0f4c8782c8cc062a7f788295cd91bb",
+      "avgPrice": 0.4699,
+      "totalBought": 55000.2007,
+      "realizedPnl": 29150.2713,
+      "curPrice": 1,
+      "outcomeIndex": 0,
+      "timestamp": 1730938815
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "48331043336612883890938759509493159234755048973500640148014422747788308965732",
+      "conditionId": "0xdd22472e552920b8438158ea7238bfadfa4f736aa4cee91a6b86c39ead110917",
+      "avgPrice": 0.3932,
+      "totalBought": 179193.6211,
+      "realizedPnl": 19131.7861,
+      "curPrice": 0,
+      "outcomeIndex": 1,
+      "timestamp": 1729705851
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "69236923620077691027083946871148646972011131466059644796654161903044970987404",
+      "conditionId": "0xc6485bb7ea46d7bb89beb9c91e7572ecfc72a6273789496f78bc5e989e4d1638",
+      "avgPrice": 0.393,
+      "totalBought": 634958.41,
+      "realizedPnl": 17320.3375,
+      "curPrice": 0,
+      "outcomeIndex": 0,
+      "timestamp": 1730924482
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "85882747446059283518997350779572616984413802718247398490010754008042064685948",
+      "conditionId": "0x1092f6af37037a3539947b2052eeffff3608e2b68926340cab146369d3d2aac9",
+      "avgPrice": 0.5443,
+      "totalBought": 37876.7895,
+      "realizedPnl": 17258.7106,
+      "curPrice": 1,
+      "outcomeIndex": 1,
+      "timestamp": 1730973541
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "105184348976114274990683066782141725521410345945023353024053078695238621958578",
+      "conditionId": "0xbb01eefb24a38a9aa1921ec168d3049e7374b28a2540937d06b3ff2524d66627",
+      "avgPrice": 0.5367,
+      "totalBought": 12116.0022,
+      "realizedPnl": 5612.217,
+      "curPrice": 1,
+      "outcomeIndex": 0,
+      "timestamp": 1730960500
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "80692267952118231579739078214722079301718527753004959099480302005191158711065",
+      "conditionId": "0xa923afcb8297e3ade170f2f8c088f3c277557fadef2c67054d72cc59f8504b2b",
+      "avgPrice": 0.46,
+      "totalBought": 49104.13,
+      "realizedPnl": 1964.1652,
+      "curPrice": 0,
+      "outcomeIndex": 1,
+      "timestamp": 1728945057
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "7374237615890526880478224649885278725219793468355446734533315746155037370158",
+      "conditionId": "0x34b5567e4f9a1b9561fba0f39c60b4da1f33052c8918dedc954401494d947cee",
+      "avgPrice": 0.4538,
+      "totalBought": 37769.65,
+      "realizedPnl": 1052.95,
+      "curPrice": 0,
+      "outcomeIndex": 0,
+      "timestamp": 1730969850
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "11015470973684177829729219287262166995141465048508201953575582100565462316088",
+      "conditionId": "0x26ee82bee2493a302d21283cb578f7e2fff2dd15743854f53034d12420863b55",
+      "avgPrice": 0.41,
+      "totalBought": 7618.35,
+      "realizedPnl": 685.6515,
+      "curPrice": 0,
+      "outcomeIndex": 0,
+      "timestamp": 1729091919
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "15689933950391663206664315906845711271853045861507143124541398615962179259380",
+      "conditionId": "0xf404052387b0612112823ad31ca9572150cce046590c61b6c98792eb7b264ed1",
+      "avgPrice": 0.1189,
+      "totalBought": 223.89,
+      "realizedPnl": 85.3099,
+      "curPrice": 0,
+      "outcomeIndex": 0,
+      "timestamp": 1731489423
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "49610010575118290108254906088686177768562148506886736494765977002781531511382",
+      "conditionId": "0x749de8f149c7b94e9a202482cadb8df6c568db7fec7165852ccce561b07ec168",
+      "avgPrice": 0.069,
+      "totalBought": 49.9905,
+      "realizedPnl": 21.5459,
+      "curPrice": 0,
+      "outcomeIndex": 0,
+      "timestamp": 1729956801
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "25668899010402601503955316115022032698540963421550564631866184099140706515292",
+      "conditionId": "0x749de8f149c7b94e9a202482cadb8df6c568db7fec7165852ccce561b07ec168",
+      "avgPrice": 0.927,
+      "totalBought": 50,
+      "realizedPnl": -21.3452,
+      "curPrice": 1,
+      "outcomeIndex": 1,
+      "timestamp": 1735720072
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "28542071792300007181611447397504994131484152585152031411345975186749097403884",
+      "conditionId": "0xf404052387b0612112823ad31ca9572150cce046590c61b6c98792eb7b264ed1",
+      "avgPrice": 0.966,
+      "totalBought": 223.89,
+      "realizedPnl": -104.2848,
+      "curPrice": 1,
+      "outcomeIndex": 1,
+      "timestamp": 1731489423
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "52646153159016006621189163812433115969858888637703551736022048114666679879653",
+      "conditionId": "0xcd1b6b71a1964f15e2c14809594cbfa0d576270e8ef94c8c24913121097e09e5",
+      "avgPrice": 0.6427,
+      "totalBought": 7843.48,
+      "realizedPnl": -1119.6097,
+      "curPrice": 0,
+      "outcomeIndex": 1,
+      "timestamp": 1729521510
+    },
+    {
+      "proxyWallet": "0x56687bf447db6ffa42ffe2204a05edaa20f55839",
+      "asset": "9957028331163987805873971753654507302936617692682833719706803039129302643823",
+      "conditionId": "0x34b5567e4f9a1b9561fba0f39c60b4da1f33052c8918dedc954401494d947cee",
+      "avgPrice": 0.57,
+      "totalBought": 36387.3265,
+      "realizedPnl": -2886.1156,
+      "curPrice": 1,
+      "outcomeIndex": 1,
+      "timestamp": 1729585916
+    }
+  ],
+  "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf": [
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0xdd22472e552920b8438158ea7238bfadfa4f736aa4cee91a6b86c39ead110917",
+      "avgPrice": 0.5434,
+      "totalBought": 25223698.7313,
+      "realizedPnl": 9710283.2494,
+      "curPrice": 1,
+      "outcomeIndex": 0,
+      "timestamp": 1730923131
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0xcd1b6b71a1964f15e2c14809594cbfa0d576270e8ef94c8c24913121097e09e5",
+      "avgPrice": 0.317,
+      "totalBought": 5562803.3647,
+      "realizedPnl": 3759116.5681,
+      "curPrice": 1,
+      "outcomeIndex": 0,
+      "timestamp": 1731411467
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0x2010ff3939e8e664dd57369aa907bbaa6d03ae18be27fe3ab2f4cdcb95a8b2ab",
+      "avgPrice": 0.2858,
+      "totalBought": 1123307.4287,
+      "realizedPnl": 794764.1602,
+      "curPrice": 1,
+      "outcomeIndex": 0,
+      "timestamp": 1730960942
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0x0c12d7b5322f432a0c4ac8806b476c7483c4d44061ca1188b6f749ec9db34996",
+      "avgPrice": 0.001,
+      "totalBought": 1526719.194,
+      "realizedPnl": 761832.7808,
+      "curPrice": 0,
+      "outcomeIndex": 0,
+      "timestamp": 1731411553
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0xa923afcb8297e3ade170f2f8c088f3c277557fadef2c67054d72cc59f8504b2b",
+      "avgPrice": 0.5149,
+      "totalBought": 1473360.5058,
+      "realizedPnl": 714660.8801,
+      "curPrice": 1,
+      "outcomeIndex": 0,
+      "timestamp": 1730924997
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0x265366ede72d73e137b2b9095a6cdc9be6149290caa295738a95e3d881ad0865",
+      "avgPrice": 0.3691,
+      "totalBought": 1418871.672,
+      "realizedPnl": 698205.8726,
+      "curPrice": 1,
+      "outcomeIndex": 1,
+      "timestamp": 1731411483
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0x037c9d29c04a2f6a5373ae7db7779cb40a751ca372de1e55999397a8f571c67e",
+      "avgPrice": 0.0011,
+      "totalBought": 2245662.102,
+      "realizedPnl": 516816.081,
+      "curPrice": 0,
+      "outcomeIndex": 0,
+      "timestamp": 1731411505
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0x02bc0bbff054877a08cdc4f9ccf4e7606804bc05c27f5faccf26c6e1666a5558",
+      "avgPrice": 0.5215,
+      "totalBought": 1088561.2066,
+      "realizedPnl": 486140.7819,
+      "curPrice": 1,
+      "outcomeIndex": 1,
+      "timestamp": 1731045272
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0xbb01eefb24a38a9aa1921ec168d3049e7374b28a2540937d06b3ff2524d66627",
+      "avgPrice": 0.4756,
+      "totalBought": 690721.2548,
+      "realizedPnl": 362181.0714,
+      "curPrice": 1,
+      "outcomeIndex": 0,
+      "timestamp": 1730960500
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0x1092f6af37037a3539947b2052eeffff3608e2b68926340cab146369d3d2aac9",
+      "avgPrice": 0.4757,
+      "totalBought": 591112.8707,
+      "realizedPnl": 309903.3358,
+      "curPrice": 1,
+      "outcomeIndex": 1,
+      "timestamp": 1730973541
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0xa59e2e79dc1a564477c8d77dc32c30b37c0f4c8782c8cc062a7f788295cd91bb",
+      "avgPrice": 0.4416,
+      "totalBought": 171353.3984,
+      "realizedPnl": 95678.4257,
+      "curPrice": 1,
+      "outcomeIndex": 0,
+      "timestamp": 1730938815
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0x34b5567e4f9a1b9561fba0f39c60b4da1f33052c8918dedc954401494d947cee",
+      "avgPrice": 0.4563,
+      "totalBought": 143453.7183,
+      "realizedPnl": 77991.1961,
+      "curPrice": 1,
+      "outcomeIndex": 1,
+      "timestamp": 1730941146
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0xc6485bb7ea46d7bb89beb9c91e7572ecfc72a6273789496f78bc5e989e4d1638",
+      "avgPrice": 0.441,
+      "totalBought": 4212524.5677,
+      "realizedPnl": 72511.3911,
+      "curPrice": 0,
+      "outcomeIndex": 0,
+      "timestamp": 1730923201
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0x34b8fa269775d034f3d98b6848e0a7c5212efcaa0c98e6f8fb54c5d6f72b3705",
+      "avgPrice": 0.002,
+      "totalBought": 120798.153,
+      "realizedPnl": 60157.4036,
+      "curPrice": 0,
+      "outcomeIndex": 0,
+      "timestamp": 1731411559
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0xced9f9d90c94db9f1e1dbd7d9fba82fe4fa7431c0d4e91e28896c8ac2d6acadd",
+      "avgPrice": 0.002,
+      "totalBought": 1019292.239,
+      "realizedPnl": 52879.9155,
+      "curPrice": 0,
+      "outcomeIndex": 0,
+      "timestamp": 1730923276
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0xc53c00d3ed7df96cb528e049ca2d8a6056b620a82bfffd3ad58d35c5f92c02d6",
+      "avgPrice": 0.2814,
+      "totalBought": 156125.1487,
+      "realizedPnl": 37661.2835,
+      "curPrice": 0,
+      "outcomeIndex": 0,
+      "timestamp": 1728576008
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0x26ee82bee2493a302d21283cb578f7e2fff2dd15743854f53034d12420863b55",
+      "avgPrice": 0.5512,
+      "totalBought": 230460.7567,
+      "realizedPnl": 33090.9012,
+      "curPrice": 1,
+      "outcomeIndex": 1,
+      "timestamp": 1731628696
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0xa78d39676ef44a148c1b847597eb7fb318649b91cb4ff16af97909e4b4ede082",
+      "avgPrice": 0.6041,
+      "totalBought": 169304.6386,
+      "realizedPnl": 21552.6313,
+      "curPrice": 1,
+      "outcomeIndex": 1,
+      "timestamp": 1728820182
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0xde20ba1b4fa2f2aae4e0c2dae0e8e111986743b094952272730607dc9d4cd8e1",
+      "avgPrice": 0.9267,
+      "totalBought": 253469.1972,
+      "realizedPnl": 18566.6186,
+      "curPrice": 1,
+      "outcomeIndex": 0,
+      "timestamp": 1724718514
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0xdd2f4921a562fc4d18c0bde327d2a9315352a3ba4137656112b9b1770fd1f2a9",
+      "avgPrice": 0.49,
+      "totalBought": 39669.848,
+      "realizedPnl": 13010.7474,
+      "curPrice": 1,
+      "outcomeIndex": 0,
+      "timestamp": 1731247629
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0xab9e5e0621918f6d4d8cb0430cef4d16e8d964e8c10cda60fcb48673e1e8476f",
+      "avgPrice": 0.19,
+      "totalBought": 29093.9962,
+      "realizedPnl": 9019.1388,
+      "curPrice": 0,
+      "outcomeIndex": 0,
+      "timestamp": 1728123522
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0xdd22472e552920b8438158ea7238bfadfa4f736aa4cee91a6b86c39ead110917",
+      "avgPrice": 0.397,
+      "totalBought": 4091032.5208,
+      "realizedPnl": 6770.6348,
+      "curPrice": 0,
+      "outcomeIndex": 1,
+      "timestamp": 1729284667
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0x4d3315503bed60f1358ef6809c1e2a7bb2aa8b362025b3bb40a78ac3df58ec76",
+      "avgPrice": 0.8471,
+      "totalBought": 32109.3341,
+      "realizedPnl": 4908.3933,
+      "curPrice": 1,
+      "outcomeIndex": 0,
+      "timestamp": 1724456123
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0xa78d39676ef44a148c1b847597eb7fb318649b91cb4ff16af97909e4b4ede082",
+      "avgPrice": 0.24,
+      "totalBought": 169304.8868,
+      "realizedPnl": 4196.7092,
+      "curPrice": 0,
+      "outcomeIndex": 0,
+      "timestamp": 1730795311
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0x26ee82bee2493a302d21283cb578f7e2fff2dd15743854f53034d12420863b55",
+      "avgPrice": 0.4,
+      "totalBought": 154067.5,
+      "realizedPnl": 4080.64,
+      "curPrice": 0,
+      "outcomeIndex": 0,
+      "timestamp": 1729284959
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0x230144e34a84dfd0ebdc6de7fde37780e28154f6f84dd8880c7f0e58d302d448",
+      "avgPrice": 0.985,
+      "totalBought": 573316.34,
+      "realizedPnl": 3664.8203,
+      "curPrice": 1,
+      "outcomeIndex": 1,
+      "timestamp": 1730919615
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0x02bc0bbff054877a08cdc4f9ccf4e7606804bc05c27f5faccf26c6e1666a5558",
+      "avgPrice": 0.45,
+      "totalBought": 70000,
+      "realizedPnl": 3500,
+      "curPrice": 0,
+      "outcomeIndex": 0,
+      "timestamp": 1728331850
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0x0177f278fbb35677f8bd248e092adcb5dbe16a9fb603d8644843791ee08f2327",
+      "avgPrice": 0.9104,
+      "totalBought": 29876.7009,
+      "realizedPnl": 2675.7872,
+      "curPrice": 1,
+      "outcomeIndex": 0,
+      "timestamp": 1724718518
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0x773f3ca26bdf685da92d2a8a701dd98e4e8b46e0b5366cf09aed9eb8fb6fc189",
+      "avgPrice": 0.38,
+      "totalBought": 18535,
+      "realizedPnl": 2224.2,
+      "curPrice": 0,
+      "outcomeIndex": 1,
+      "timestamp": 1728818658
+    },
+    {
+      "proxyWallet": "0x1f2dd6d473f3e824cd2f8a89d9c69fb96f6ad0cf",
+      "conditionId": "0x7606802127355512c8f8ff9c70ef27a2717a8554374d84452de4c7d28147338d",
+      "avgPrice": 0.37,
+      "totalBought": 15294.4173,
+      "realizedPnl": 1992.5349,
+      "curPrice": 0,
+      "outcomeIndex": 1,
+      "timestamp": 1730961030
+    }
+  ],
+  "0x859b4303ce5ae7d6fd43bc118d807a01b37f31b8": [
+    {
+      "proxyWallet": "0x859b4303ce5ae7d6fd43bc118d807a01b37f31b8",
+      "conditionId": "0x8bf1c1536ecb1c08fe13c6b71e8ab1f58bf3461c4cb79f5f1679f869a06aef86",
+      "avgPrice": 0.7593,
+      "totalBought": 71764.0973,
+      "realizedPnl": 18220.9114,
+      "curPrice": 1,
+      "outcomeIndex": 0,
+      "timestamp": 1785355601
+    }
+  ]
+}
