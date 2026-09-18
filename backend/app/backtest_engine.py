@@ -449,8 +449,9 @@ def _backtest_one_market(run_id: str, condition_id: str, params: dict):
     now_ts = int(time.time())
     gamma, data_api, clob = _clients()
 
+    category_override = (params.get("market_categories") or {}).get(condition_id)
     with db.db_session() as conn:
-        market = sync_market_meta(conn, gamma, condition_id, now_ts)
+        market = sync_market_meta(conn, gamma, condition_id, now_ts, category_override=category_override)
     if market is None or market.resolved_yes is None:
         return  # not resolved -- no ground truth to grade against
     if len(market.clob_token_ids) < 2:

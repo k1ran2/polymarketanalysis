@@ -61,18 +61,39 @@ def _parse_iso_ts(s: Optional[str]) -> Optional[int]:
 # Market metadata + resolution outcome
 # ---------------------------------------------------------------------------
 
-def sync_market_meta(conn, gamma, condition_id: str, now_ts: Optional[int] = None) -> Optional[BacktestMarket]:
+def sync_market_meta(
+    conn, gamma, condition_id: str, now_ts: Optional[int] = None, category_override: Optional[str] = None,
+) -> Optional[BacktestMarket]:
     """
     Fetch + cache one market's metadata and resolution outcome from Gamma.
     Returns None (and caches nothing) if the market doesn't exist or hasn't
     resolved yet -- an unresolved market has no ground truth to grade a
     backtest against.
+
+    `category_override`, when given, is preferred over deriving one from
+    Gamma's own response (confirmed live: Gamma's current /markets response
+    no longer nests `events[0].tags` the way this function's fallback
+    below expects, so that derivation is currently silent dead code --
+    every `backtest_market_meta` row synced without an override has
+    category=NULL, confirmed against this project's real cache: all 397
+    rows). The caller with real category data is routers.backtest.
+    auto_select_markets, which gets it from a DIFFERENT Gamma endpoint
+    shape (tag_id-filtered /markets, not per-condition-id lookup) that
+    does still carry it -- see create_run for how it's threaded through.
+    Backfills a NULL category on an already-cached row too, not just new
+    ones, so re-running a backtest on a market first seen before this fix
+    still gets categorized.
     """
     now_ts = now_ts or int(time.time())
     row = conn.execute(
         "SELECT * FROM backtest_market_meta WHERE condition_id=?", (condition_id,)
     ).fetchone()
     if row is not None:
+        if category_override and row["category"] is None:
+            conn.execute(
+                "UPDATE backtest_market_meta SET category=? WHERE condition_id=?", (category_override, condition_id),
+            )
+            row = conn.execute("SELECT * FROM backtest_market_meta WHERE condition_id=?", (condition_id,)).fetchone()
         return _row_to_market(row)
 
     raw = gamma.get_market_by_condition_id(condition_id)
@@ -86,12 +107,15 @@ def sync_market_meta(conn, gamma, condition_id: str, now_ts: Optional[int] = Non
     except (KeyError, ValueError, TypeError, IndexError, json.JSONDecodeError):
         return None
 
-    category = None
-    events = raw.get("events") or []
-    if events:
-        tags = events[0].get("tags") or []
-        if tags:
-            category = tags[0].get("label")
+    category = category_override
+    if category is None:
+        # Kept as a fallback in case Gamma's response shape changes back --
+        # currently never matches anything live, see docstring above.
+        events = raw.get("events") or []
+        if events:
+            tags = events[0].get("tags") or []
+            if tags:
+                category = tags[0].get("label")
 
     conn.execute(
         """

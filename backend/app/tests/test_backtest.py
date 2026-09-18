@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from app.db import SCHEMA, MIGRATIONS
 from app.backtest_data import (
     bulk_fetch_status, bulk_price_series, bulk_share_timeline, bulk_wallet_positions,
-    price_at_or_before, price_at_or_before_series, reconstruct_holders_at, wallet_positions_asof,
+    price_at_or_before, price_at_or_before_series, reconstruct_holders_at, sync_market_meta, wallet_positions_asof,
 )
 from app.backtest_engine import (
     _build_checkpoints, _has_no_edge, _holders_at, _holders_at_fast, _parse_verdict_side,
@@ -905,3 +905,83 @@ def test_backtest_engine_signal_functions_are_the_same_objects_as_app_signals():
     assert build_verdict_cfg is signals_module.build_verdict_cfg
     assert build_insider_cfg is signals_module.build_insider_cfg
     assert _STRENGTH_RANK is signals_module.STRENGTH_RANK
+
+
+# ---------------------------------------------------------------------------
+# sync_market_meta's category_override -- real bug fix: Gamma's per-market
+# lookup (get_market_by_condition_id) no longer returns the events[0].tags
+# shape this function's own fallback derivation expects (confirmed live),
+# so every market synced without an override got category=NULL forever.
+# auto_select_markets DOES have real category data (from a different Gamma
+# endpoint shape) -- these tests cover it actually reaching the cached row.
+# ---------------------------------------------------------------------------
+
+class _FakeGamma:
+    """Minimal stand-in for GammaClient.get_market_by_condition_id -- no
+    `events`/`tags` at all, matching Gamma's actual current response shape."""
+    def __init__(self, raw):
+        self._raw = raw
+
+    def get_market_by_condition_id(self, condition_id):
+        return self._raw
+
+
+def _fake_gamma_market(**overrides):
+    raw = {
+        "outcomePrices": '["0.7", "0.3"]',
+        "clobTokenIds": '["tokY", "tokN"]',
+        "closed": True,
+        "question": "Will X happen?",
+        "slug": "will-x-happen",
+    }
+    raw.update(overrides)
+    return raw
+
+
+def test_sync_market_meta_uses_category_override_for_a_new_market():
+    conn = _make_conn()
+    gamma = _FakeGamma(_fake_gamma_market())
+    market = sync_market_meta(conn, gamma, "c1", now_ts=NOW, category_override="Politics")
+    assert market.category == "Politics"
+    conn.close()
+
+
+def test_sync_market_meta_falls_back_to_gamma_tags_when_no_override_given():
+    conn = _make_conn()
+    gamma = _FakeGamma(_fake_gamma_market(events=[{"tags": [{"label": "Sports"}]}]))
+    market = sync_market_meta(conn, gamma, "c1", now_ts=NOW)
+    assert market.category == "Sports"
+    conn.close()
+
+
+def test_sync_market_meta_backfills_a_null_category_on_an_already_cached_market():
+    """The real-world case this fix targets: a market synced BEFORE this fix
+    (or from a Gamma response with no tags) has category=NULL cached --
+    re-running a backtest that now has real category data for it must
+    update the cached row, not just skip it because it's already synced."""
+    conn = _make_conn()
+    conn.execute(
+        "INSERT INTO backtest_market_meta (condition_id, category, clob_token_ids, resolved_yes, synced_at) "
+        "VALUES ('c1', NULL, '[\"tokY\",\"tokN\"]', 1, ?)", (NOW,),
+    )
+    conn.commit()
+
+    gamma = _FakeGamma(_fake_gamma_market())  # never called -- row already cached
+    market = sync_market_meta(conn, gamma, "c1", now_ts=NOW, category_override="Crypto")
+    assert market.category == "Crypto"
+    row = conn.execute("SELECT category FROM backtest_market_meta WHERE condition_id='c1'").fetchone()
+    assert row["category"] == "Crypto"
+    conn.close()
+
+
+def test_sync_market_meta_does_not_overwrite_an_existing_real_category():
+    conn = _make_conn()
+    conn.execute(
+        "INSERT INTO backtest_market_meta (condition_id, category, clob_token_ids, resolved_yes, synced_at) "
+        "VALUES ('c1', 'Politics', '[\"tokY\",\"tokN\"]', 1, ?)", (NOW,),
+    )
+    conn.commit()
+    gamma = _FakeGamma(_fake_gamma_market())
+    market = sync_market_meta(conn, gamma, "c1", now_ts=NOW, category_override="Crypto")
+    assert market.category == "Politics"  # override never clobbers a real, already-known category
+    conn.close()

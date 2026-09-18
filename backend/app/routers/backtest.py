@@ -347,6 +347,7 @@ def create_run(req: RunRequest):
     run's stored params either way -- auto-picked or hand-picked look
     identical to everything downstream.
     """
+    market_categories = None
     if req.condition_ids:
         condition_ids = req.condition_ids
     elif req.market_selection:
@@ -357,11 +358,21 @@ def create_run(req: RunRequest):
                      "try a wider date range, more categories, or a larger size preset.",
             )
         condition_ids = [m["condition_id"] for m in picked]
+        # auto_select_markets already knows each market's category (from the
+        # tag_id-filtered Gamma query it made to find them) -- carry it
+        # through instead of discarding it here, which used to mean even a
+        # category-filtered backtest recorded no category on its own trades.
+        # See backtest_data.sync_market_meta's docstring for the other half
+        # of this fix (why the per-market Gamma lookup can't derive this
+        # itself anymore).
+        market_categories = {m["condition_id"]: m["category"] for m in picked if m.get("category")}
     else:
         raise HTTPException(400, "Provide either condition_ids or market_selection.")
 
     params = req.model_dump()
     params["condition_ids"] = condition_ids
+    if market_categories:
+        params["market_categories"] = market_categories
     if params["min_conviction"] is None:
         params["min_conviction"] = 50.0 if req.strategy == "smart_money" else 70.0
     result = engine.start_backtest(params)
