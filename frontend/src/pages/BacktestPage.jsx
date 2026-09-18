@@ -134,13 +134,13 @@ export default function BacktestPage() {
   const [strategyDefaults, setStrategyDefaults] = useState(null);
   const [verdictWeights, setVerdictWeights] = useState({});
   const [insiderWeights, setInsiderWeights] = useState({});
-  const [showWeights, setShowWeights] = useState(false);
 
   // Kept out of the way by default -- most runs never need them. Sweep/search
   // are genuinely advanced tools (multi-run, take a while); min conviction /
   // no-edge threshold are fine-tuning most people should leave at defaults.
   const [showAdvancedSetup, setShowAdvancedSetup] = useState(false);
   const [showAdvancedTools, setShowAdvancedTools] = useState(false);
+  const [showResultDetails, setShowResultDetails] = useState(false);
 
   // Weight sweep: runs the SAME market set once per candidate value of one
   // parameter, so results are actually comparable -- the real way to tell
@@ -495,8 +495,19 @@ export default function BacktestPage() {
 
       {error && <div className="error">Error: {error}</div>}
 
+      <div className="insiders-controls" style={{ marginBottom: 20 }}>
+        <button className="btn-primary" onClick={handleRun} disabled={!!liveRunId || sweepRunning} style={{ fontSize: "0.95rem", padding: "12px 20px" }}>
+          {liveRunId ? "Running…" : (
+            pickMode === "auto"
+              ? `Backtest ${strategy === "smart_money" ? "Smart Money" : "Insider"} · ${autoYearMin}–${autoYearMax} · ${autoCount} markets →`
+              : `Backtest ${strategy === "smart_money" ? "Smart Money" : "Insider"} · ${selected.length} market${selected.length === 1 ? "" : "s"} →`
+          )}
+        </button>
+        <span className="stat-footnote">Uses the variables below — pre-filled with sensible defaults, adjust anything first if you like.</span>
+      </div>
+
       <section>
-        <h3>1. Strategy</h3>
+        <h3>1. Setup</h3>
         <div className="insiders-controls" style={{ flexWrap: "wrap" }}>
           <label>
             <input type="radio" name="strategy" checked={strategy === "smart_money"} onChange={() => setStrategy("smart_money")} />
@@ -516,17 +527,14 @@ export default function BacktestPage() {
           )}
         </div>
         {activeStrategyInfo && (
-          <p className="chart-caption" style={{ marginBottom: 0 }}>
+          <p className="chart-caption">
             {strategy === "smart_money"
               ? "Follows historically-skilled traders: flags a side when their money clearly disagrees with the market price."
               : "Flags positions that look like early/informed money — new or thin-history wallets, unusually large or well-timed bets."}
             {" "}Full formula is under Advanced settings → Edit weights.
           </p>
         )}
-      </section>
 
-      <section>
-        <h3>2. Markets</h3>
         <div className="insiders-controls" style={{ flexWrap: "wrap", marginBottom: 12 }}>
           <label>
             <input type="radio" name="pickMode" checked={pickMode === "auto"} onChange={() => setPickMode("auto")} />
@@ -647,7 +655,7 @@ export default function BacktestPage() {
       </section>
 
       <section>
-        <h3>3. Run</h3>
+        <h3>2. Run</h3>
         <div className="insiders-controls" style={{ flexWrap: "wrap", marginBottom: 4 }}>
           <label>
             Stake per trade ($):
@@ -680,15 +688,10 @@ export default function BacktestPage() {
                 style={{ width: 70 }}
               />
             </label>
-            {strategyDefaults && (
-              <button className="back-link" onClick={() => setShowWeights((v) => !v)}>
-                {showWeights ? "▾" : "▸"} Edit weights
-              </button>
-            )}
           </div>
         )}
 
-        {showAdvancedSetup && showWeights && (
+        {showAdvancedSetup && strategyDefaults && (
           <MethodologyPanel
             info={activeStrategyInfo}
             weights={strategy === "smart_money" ? verdictWeights : insiderWeights}
@@ -728,34 +731,27 @@ export default function BacktestPage() {
             )}
             {run.status === "error" && <div className="error">Run failed: {run.error}</div>}
 
+            {/* Portfolio P&L leads the results -- the one number that answers "did this make
+                money", before any supporting detail. */}
             {run.status === "done" && run.summary && (
-              <div className="card-grid">
-                <div className="stat-card">
-                  <div className="stat-label">Trades taken</div>
-                  <div className="stat-value">{run.summary.n_trades}</div>
+              <div style={{ marginTop: 4 }}>
+                <div className="stat-label">Portfolio P&amp;L</div>
+                <div
+                  className={"stat-value " + (run.summary.total_pnl_usd >= 0 ? "positive" : "negative")}
+                  style={{ fontSize: "2.2rem" }}
+                >
+                  {fmtUsd(run.summary.total_pnl_usd)}
+                  {run.summary.roi_pct != null && (
+                    <span style={{ fontSize: "1.1rem", marginLeft: 10, fontWeight: 600 }}>
+                      ({run.summary.roi_pct >= 0 ? "+" : ""}{run.summary.roi_pct.toFixed(1)}% ROI)
+                    </span>
+                  )}
                 </div>
-                <div className="stat-card">
-                  <div className="stat-label">Win rate</div>
-                  <div className="stat-value">
-                    {run.summary.win_rate != null ? `${(run.summary.win_rate * 100).toFixed(0)}%` : "—"}
-                  </div>
-                </div>
-                <div className={"stat-card"}>
-                  <div className="stat-label">Total P&amp;L</div>
-                  <div className={"stat-value " + (run.summary.total_pnl_usd >= 0 ? "positive" : "negative")}>
-                    {fmtUsd(run.summary.total_pnl_usd)}
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-label">ROI on staked $</div>
-                  <div className={"stat-value " + (run.summary.roi_pct >= 0 ? "positive" : "negative")}>
-                    {run.summary.roi_pct != null ? `${run.summary.roi_pct.toFixed(1)}%` : "—"}
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-label">Avg P&amp;L / trade</div>
-                  <div className="stat-value">{fmtUsd(run.summary.avg_pnl_usd)}</div>
-                </div>
+                <p className="stat-footnote" style={{ marginTop: 4 }}>
+                  {run.summary.n_trades} trade{run.summary.n_trades === 1 ? "" : "s"}, each a flat
+                  ${run.params?.stake_usd ?? stakeUsd} stake with unlimited capital — sums independent
+                  trades, not a compounded bankroll.
+                </p>
               </div>
             )}
 
@@ -763,7 +759,7 @@ export default function BacktestPage() {
                 the run is still going (markets process concurrently -- see market_concurrency) --
                 not gated behind the run finishing, since that can take a while across many markets. */}
             {equity.length > 1 && (
-              <div ref={chartRef} style={{ marginTop: 20 }}>
+              <div ref={chartRef} style={{ marginTop: 16 }}>
                 <h4 style={{ margin: "0 0 10px", fontSize: "0.9rem", fontWeight: 650 }}>
                   Cumulative P&amp;L over time{running ? " (live)" : ""}
                 </h4>
@@ -783,7 +779,32 @@ export default function BacktestPage() {
               </div>
             )}
 
-            {run.status === "done" && run.summary?.by_signal_type && Object.keys(run.summary.by_signal_type).length > 1 && (
+            {run.status === "done" && run.summary && (
+              <button className="back-link" style={{ marginTop: 16 }} onClick={() => setShowResultDetails((v) => !v)}>
+                {showResultDetails ? "▾" : "▸"} Details (win rate, by signal type, by category)
+              </button>
+            )}
+
+            {showResultDetails && run.status === "done" && run.summary && (
+              <div className="card-grid">
+                <div className="stat-card">
+                  <div className="stat-label">Trades taken</div>
+                  <div className="stat-value">{run.summary.n_trades}</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-label">Win rate</div>
+                  <div className="stat-value">
+                    {run.summary.win_rate != null ? `${(run.summary.win_rate * 100).toFixed(0)}%` : "—"}
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-label">Avg P&amp;L / trade</div>
+                  <div className="stat-value">{fmtUsd(run.summary.avg_pnl_usd)}</div>
+                </div>
+              </div>
+            )}
+
+            {showResultDetails && run.status === "done" && run.summary?.by_signal_type && Object.keys(run.summary.by_signal_type).length > 1 && (
               <div style={{ marginTop: 20 }}>
                 <h4 style={{ margin: "0 0 10px", fontSize: "0.9rem", fontWeight: 650 }}>
                   By signal type
@@ -809,7 +830,7 @@ export default function BacktestPage() {
               </div>
             )}
 
-            {run.status === "done" && run.summary?.by_category && Object.keys(run.summary.by_category).length > 1 && (
+            {showResultDetails && run.status === "done" && run.summary?.by_category && Object.keys(run.summary.by_category).length > 1 && (
               <div style={{ marginTop: 20 }}>
                 <h4 style={{ margin: "0 0 10px", fontSize: "0.9rem", fontWeight: 650 }}>By category</h4>
                 <div className="table-scroll">
