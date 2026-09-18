@@ -13,7 +13,7 @@ from app.scoring import (
     ClosedPosition, parse_closed_position, is_resolved_outcome, outcome_value,
     trader_raw_stats, confidence_tier, bronze_weight,
     composite_and_percentile, compute_trend, split_positions_by_lookback,
-    fade_pool_eligible, smart_pool_eligible, TrendResult, ScoreResult,
+    fade_pool_eligible, smart_pool_eligible, holder_dumb_pool_eligible, TrendResult, ScoreResult,
     Holder, usd_weighted_score, net_smart_flow, smart_implied_probability,
     undervalued_gap, signed_distribution_stats, whale_concentration,
     gini_coefficient, overall_market_verdict, tenure_days, usd_weighted_tenure_days,
@@ -407,6 +407,57 @@ def test_verdict_fade_when_dumb_money_dominates_one_side():
     ]
     v = overall_market_verdict(holders, current_market_price=0.5)
     assert "Fade NO" in v.label
+
+
+# ---------------------------------------------------------------------------
+# holder_dumb_pool_eligible / §3.3 fade-pool trend gate wired into
+# overall_market_verdict's dumb_usd -- a low lifetime score alone used to be
+# enough to count as dumb money; it no longer is if the trader is trending
+# "Improving" or has already recovered on their recent-window score. A
+# holder with no trend data (trend=None -- every backtest holder, since the
+# backtest engine doesn't compute a recent-vs-lifetime window per checkpoint)
+# must fall back to the old lifetime-only behavior exactly, unfiltered.
+# ---------------------------------------------------------------------------
+
+def test_dumb_pool_eligible_excludes_improving_trend_by_default():
+    h = Holder("w", "NO", 1000.0, 20.0, "Bronze", trend="Improving")
+    assert holder_dumb_pool_eligible(h, dumb_threshold=40.0) is False
+
+
+def test_dumb_pool_eligible_excludes_recovered_recent_score():
+    h = Holder("w", "NO", 1000.0, 20.0, "Bronze", trend="Stable", recent_percentile=50.0)
+    assert holder_dumb_pool_eligible(h, dumb_threshold=40.0) is False
+
+
+def test_dumb_pool_eligible_includes_declining_or_stable_low_scorer():
+    h = Holder("w", "NO", 1000.0, 20.0, "Bronze", trend="Declining")
+    assert holder_dumb_pool_eligible(h, dumb_threshold=40.0) is True
+
+
+def test_dumb_pool_eligible_with_no_trend_data_falls_back_to_lifetime_only():
+    """The backtest engine never sets trend/recent_percentile -- this must
+    behave exactly as it did before the fade-pool rule existed, i.e. purely
+    on score_percentile, so wiring this in doesn't silently change any past
+    backtest result."""
+    dumb = Holder("w1", "NO", 1000.0, 20.0, "Bronze")
+    not_dumb = Holder("w2", "NO", 1000.0, 60.0, "Gold")
+    assert holder_dumb_pool_eligible(dumb, dumb_threshold=40.0) is True
+    assert holder_dumb_pool_eligible(not_dumb, dumb_threshold=40.0) is False
+
+
+def test_verdict_no_longer_fades_an_improving_trader_even_with_low_lifetime_score():
+    """Same shape as test_verdict_fade_when_dumb_money_dominates_one_side,
+    but every low-scoring NO holder is trending Improving -- none of them
+    should count as dumb money now, so NO's dumb_volume_share collapses and
+    the market must not fire "Fade NO" anymore."""
+    holders = [
+        Holder(f"no{i}", "NO", 1000.0, 20.0, "Bronze", trend="Improving") for i in range(6)
+    ] + [
+        Holder("yes1", "YES", 100.0, 55.0, "Silver"),
+    ]
+    v = overall_market_verdict(holders, current_market_price=0.5)
+    assert "Fade NO" not in v.label
+    assert v.dumb_volume_share == 0.0
 
 
 # ---------------------------------------------------------------------------

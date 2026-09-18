@@ -40,7 +40,7 @@ def get_holders_for_market(conn, condition_id: str) -> list[Holder]:
         """
         SELECT h.wallet, h.side, h.position_usd, h.first_seen_at,
                t.percentile, t.tier, t.n, t.volume, t.win_rate_weighted,
-               t.first_active_ts, t.fetch_status
+               t.first_active_ts, t.fetch_status, t.trend, t.recent_percentile
         FROM market_holders_cache h
         LEFT JOIN traders t ON t.wallet = h.wallet
         WHERE h.condition_id = ?
@@ -61,6 +61,8 @@ def get_holders_for_market(conn, condition_id: str) -> list[Holder]:
             avg_bet_usd=avg_bet,
             win_rate_weighted=r["win_rate_weighted"],
             first_seen_at=r["first_seen_at"],
+            trend=r["trend"],
+            recent_percentile=r["recent_percentile"],
         ))
     return holders
 

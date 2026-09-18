@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from app.db import SCHEMA
-from app.market_service import build_market_detail, build_market_summary
+from app.market_service import build_market_detail, build_market_summary, get_holders_for_market
 
 
 def make_conn():
@@ -93,6 +93,73 @@ def test_market_detail_includes_rated_holder_score_and_tier():
     assert summary["verdict"]["label"] == detail["verdict"]["label"]
     assert summary["holder_count"] == 4
 
+    conn.close()
+
+
+# ---------------------------------------------------------------------------
+# get_holders_for_market -- must surface trend/recent_percentile (§3.3
+# fade-pool inputs) from the traders table, not just tier/percentile. These
+# were computed and stored by pipeline.py all along but never selected here
+# before, which silently kept FadePoolConfig.exclude_improving_from_fade
+# inert despite defaulting to True -- see scoring.holder_dumb_pool_eligible.
+# ---------------------------------------------------------------------------
+
+def test_get_holders_for_market_surfaces_trend_and_recent_percentile():
+    conn = make_conn()
+    now = int(time.time())
+    conn.execute(
+        "INSERT INTO traders (wallet, n, volume, tier, percentile, raw_composite, "
+        "recent_percentile, trend, updated_at) VALUES "
+        "('0xw', 20, 5000, 'Bronze', 20.0, -1.0, 55.0, 'Improving', ?)", (now,),
+    )
+    conn.execute(
+        "INSERT INTO market_holders_cache (condition_id, wallet, side, position_usd, source, fetched_at) "
+        "VALUES ('c1', '0xw', 'NO', 1000.0, 'holders_fast_path', ?)", (now,),
+    )
+    conn.commit()
+
+    holders = get_holders_for_market(conn, "c1")
+    assert len(holders) == 1
+    assert holders[0].trend == "Improving"
+    assert holders[0].recent_percentile == 55.0
+    conn.close()
+
+
+def test_live_verdict_does_not_fade_an_improving_low_lifetime_scorer():
+    """End-to-end through the real DB-join path (not a hand-built Holder
+    list): a wallet with a low lifetime score but an Improving trend must no
+    longer drag the market toward a Fade verdict, now that
+    get_holders_for_market actually surfaces trend/recent_percentile."""
+    conn = make_conn()
+    now = int(time.time())
+    conn.execute(
+        "INSERT INTO markets (condition_id, question, slug, category, outcomes, outcome_prices, "
+        "clob_token_ids, volume, volume_24hr, liquidity, active, closed, updated_at) VALUES "
+        "('c2','Will Y happen?','will-y','test',?,?,?,50000,1000,5000,1,0,?)",
+        (json.dumps(["Yes", "No"]), json.dumps(["0.5", "0.5"]), json.dumps(["tok0", "tok1"]), now),
+    )
+    for i in range(6):
+        conn.execute(
+            "INSERT INTO traders (wallet, n, volume, tier, percentile, raw_composite, trend, updated_at) "
+            "VALUES (?, 20, 5000, 'Bronze', 20.0, -1.0, 'Improving', ?)", (f"0xno{i}", now),
+        )
+        conn.execute(
+            "INSERT INTO market_holders_cache (condition_id, wallet, side, position_usd, source, fetched_at) "
+            "VALUES ('c2', ?, 'NO', 1000.0, 'holders_fast_path', ?)", (f"0xno{i}", now),
+        )
+    conn.execute(
+        "INSERT INTO traders (wallet, n, volume, tier, percentile, raw_composite, updated_at) "
+        "VALUES ('0xyes1', 60, 20000, 'Silver', 55.0, 0.5, ?)", (now,),
+    )
+    conn.execute(
+        "INSERT INTO market_holders_cache (condition_id, wallet, side, position_usd, source, fetched_at) "
+        "VALUES ('c2', '0xyes1', 'YES', 100.0, 'holders_fast_path', ?)", (now,),
+    )
+    conn.commit()
+
+    row = conn.execute("SELECT * FROM markets WHERE condition_id='c2'").fetchone()
+    detail = build_market_detail(conn, row)
+    assert "Fade NO" not in detail["verdict"]["label"]
     conn.close()
 
 

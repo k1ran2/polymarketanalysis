@@ -373,6 +373,32 @@ def fade_pool_eligible(
     return True
 
 
+def holder_dumb_pool_eligible(
+    h: Holder,
+    dumb_threshold: float = cfg.VERDICT.dumb_threshold,
+    fade_cfg: cfg.FadePoolConfig = cfg.FADE,
+) -> bool:
+    """
+    Same §3.3 rule as fade_pool_eligible, adapted to Holder's own flat
+    trend/recent_percentile fields instead of a separately-built TrendResult
+    -- overall_market_verdict works from Holder objects directly, and this
+    avoids round-tripping through ScoreResult/TrendResult just to ask the
+    same question. A holder with trend=None (unknown -- e.g. the backtest
+    engine doesn't compute a recent-vs-lifetime window at each historical
+    checkpoint, so it never sets this) falls through both trend checks
+    unfiltered, which is the correct, conservative default: no basis to
+    exclude them, so they're judged on lifetime score alone, exactly as
+    before this function existed.
+    """
+    if h.score_percentile is None or h.score_percentile >= dumb_threshold:
+        return False
+    if fade_cfg.exclude_improving_from_fade and h.trend == "Improving":
+        return False
+    if h.recent_percentile is not None and h.recent_percentile >= dumb_threshold:
+        return False
+    return True
+
+
 def smart_pool_eligible(
     trend_result: TrendResult,
     smart_threshold: float = cfg.VERDICT.smart_threshold,
@@ -406,6 +432,8 @@ class Holder:
     avg_bet_usd: Optional[float] = None  # trader's lifetime volume/n; used by app.insiders' size check
     win_rate_weighted: Optional[float] = None  # trader's lifetime win rate; used by app.insiders' win-rate-anomaly check
     first_seen_at: Optional[int] = None  # when we first saw this wallet holding this market+side; used by app.insiders' clustering check
+    trend: Optional[str] = None  # "Improving" | "Declining" | "Stable" | "Insufficient recent data" | None (unknown); see §3.3/fade_pool_eligible
+    recent_percentile: Optional[float] = None  # Smart Score over just the trader's recent-window positions; None if unavailable
 
 
 def tenure_days(holder: Holder, now_ts: int) -> Optional[float]:
@@ -651,7 +679,14 @@ def overall_market_verdict(
     )
 
     smart_usd = sum(h.position_usd for h in rated if h.score_percentile >= verdict_cfg.smart_threshold)
-    dumb_usd = sum(h.position_usd for h in rated if h.score_percentile < verdict_cfg.dumb_threshold)
+    # §3.3 fade-pool rule: a holder whose lifetime score is low but who is
+    # trending "Improving" (or whose recent-window score has already
+    # recovered above dumb_threshold) isn't counted as dumb money -- their
+    # bad lifetime record no longer reflects their current skill. See
+    # holder_dumb_pool_eligible; a holder with no trend data (trend=None,
+    # e.g. every backtest holder -- see that function's docstring) is
+    # judged on lifetime score alone, unchanged from before this rule existed.
+    dumb_usd = sum(h.position_usd for h in rated if holder_dumb_pool_eligible(h, verdict_cfg.dumb_threshold))
     smart_volume_share = smart_usd / rated_usd if rated_usd > 0 else None
     dumb_volume_share = dumb_usd / rated_usd if rated_usd > 0 else None
 
@@ -678,8 +713,8 @@ def overall_market_verdict(
     # smart $ concentrated on which side?
     smart_on_yes = sum(h.position_usd for h in rated if h.side == "YES" and h.score_percentile >= verdict_cfg.smart_threshold)
     smart_on_no = sum(h.position_usd for h in rated if h.side == "NO" and h.score_percentile >= verdict_cfg.smart_threshold)
-    dumb_on_yes = sum(h.position_usd for h in rated if h.side == "YES" and h.score_percentile < verdict_cfg.dumb_threshold)
-    dumb_on_no = sum(h.position_usd for h in rated if h.side == "NO" and h.score_percentile < verdict_cfg.dumb_threshold)
+    dumb_on_yes = sum(h.position_usd for h in rated if h.side == "YES" and holder_dumb_pool_eligible(h, verdict_cfg.dumb_threshold))
+    dumb_on_no = sum(h.position_usd for h in rated if h.side == "NO" and holder_dumb_pool_eligible(h, verdict_cfg.dumb_threshold))
 
     smart_dominant_side = "YES" if smart_on_yes >= smart_on_no else "NO"
     dumb_dominant_side = "YES" if dumb_on_yes >= dumb_on_no else "NO"
@@ -713,10 +748,10 @@ def overall_market_verdict(
             unrated_volume_share, nsf, gap,
         )
 
-    # Fade {opposite side}: dumb_volume_share dominates one side and the
-    # fade-pool rule applies (checked upstream when building `holders`;
-    # here we just check dumb $ clearly dominates a side with no offsetting
-    # smart signal on that same side).
+    # Fade {opposite side}: dumb_volume_share dominates one side (dumb_usd/
+    # dumb_on_yes/dumb_on_no above already exclude fade-pool-ineligible
+    # holders -- see holder_dumb_pool_eligible) and there's no offsetting
+    # smart signal on that same side.
     dumb_dominates = (
         dumb_volume_share is not None
         and dumb_volume_share >= 0.30
