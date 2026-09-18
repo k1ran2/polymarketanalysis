@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import config as cfg
 from . import db
-from .routers import markets, search, insiders, backtest
+from .routers import markets, search, insiders, backtest, trading
 
 app = FastAPI(
     title="Polymarket Smart Money Dashboard API",
@@ -32,6 +32,7 @@ app.include_router(markets.router)
 app.include_router(search.router)
 app.include_router(insiders.router)
 app.include_router(backtest.router)
+app.include_router(trading.router)
 
 
 @app.on_event("startup")

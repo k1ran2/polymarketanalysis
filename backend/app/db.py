@@ -348,7 +348,7 @@ CREATE TABLE IF NOT EXISTS trades (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     source TEXT NOT NULL DEFAULT 'bot',    -- 'bot' | 'manual' | 'imported'
     condition_id TEXT NOT NULL,
-    token_id TEXT NOT NULL,
+    token_id TEXT,                         -- nullable: a manually-logged trade may not have a known CLOB token id
     question TEXT,
     category TEXT,
     side TEXT NOT NULL,
