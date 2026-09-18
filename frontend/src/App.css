@@ -28,6 +28,20 @@
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   color-scheme: dark;
+
+  /* Spacing scale -- one source of truth instead of hand-tuned margins per
+     page. Applied first in the new shell/sidebar/overview; existing pages
+     keep their own inline spacing until touched. */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
+
+  /* Type scale -- 5 steps, 3 weights. Same rule: new chrome uses these, old
+     pages are unchanged until redesigned. */
+  --t-xs: 0.75rem; --t-sm: 0.8125rem; --t-md: 0.875rem; --t-lg: 1.0625rem; --t-xl: 1.375rem;
+
+  --accent-2: #8a5bff;         /* was hard-coded in several gradients -- promoted to a token */
+  --surface-raised: #161a22;   /* sidebar/topbar chrome, distinct from panel content */
+  --positive: var(--success);  /* money semantics, kept distinct from --success/--danger's */
+  --negative: var(--danger);   /* general meaning even though they share a palette today */
 }
 
 * { box-sizing: border-box; }
@@ -115,6 +129,155 @@ body {
   height: 2px;
   border-radius: 2px;
   background: linear-gradient(90deg, var(--accent), #8a5bff);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Sidebar shell -- replaces the old horizontal tab strip. A dashboard      */
+/* with a live bot status/kill-switch needs that always visible, which a   */
+/* handful of top tabs doesn't scale to; a persistent sidebar does.        */
+/* ---------------------------------------------------------------------- */
+
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 216px;
+  flex-shrink: 0;
+  background: var(--surface-raised);
+  border-right: 1px solid var(--border);
+  padding: var(--s5) var(--s3);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: 0 var(--s2);
+  margin-bottom: var(--s6);
+}
+.sidebar-brand .app-logo { width: 30px; height: 30px; border-radius: 8px; }
+.sidebar-brand-name { font-size: var(--t-md); font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
+
+.sidebar-group { margin-bottom: var(--s5); }
+.sidebar-group-label {
+  color: var(--text-faint);
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 650;
+  padding: 0 var(--s3);
+  margin-bottom: var(--s2);
+}
+
+.sidebar-link {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  padding: var(--s2) var(--s3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.sidebar-link:hover { color: var(--text); background: var(--panel-hover); }
+.sidebar-link.active { color: var(--text); background: var(--accent-dim); }
+
+.shell-main { flex: 1; min-width: 0; }
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s4);
+  padding: var(--s3) var(--s6);
+  background: rgba(10, 12, 16, 0.82);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+
+.bot-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: 5px var(--s3);
+  border-radius: var(--radius-pill);
+  font-size: var(--t-xs);
+  font-weight: 650;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text-dim);
+}
+.bot-status-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); flex-shrink: 0; }
+.bot-status-chip.live { color: var(--success); border-color: var(--success-dim); background: var(--success-dim); }
+.bot-status-chip.live .dot { background: var(--success); }
+.bot-status-chip.halted { color: var(--warning); border-color: var(--warning-dim); background: var(--warning-dim); }
+.bot-status-chip.halted .dot { background: var(--warning); }
+
+.kill-switch {
+  padding: 6px var(--s4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--danger-dim);
+  background: var(--danger-dim);
+  color: var(--danger);
+  font-weight: 700;
+  font-size: var(--t-xs);
+  font-family: inherit;
+  cursor: pointer;
+}
+.kill-switch:hover:not(:disabled) { filter: brightness(1.15); }
+
+.shell-content { max-width: 1120px; margin: 0 auto; padding: var(--s6) var(--s6) var(--s7); }
+
+@media (max-width: 860px) {
+  .sidebar { display: none; } /* Phase 1: no mobile nav yet -- narrow-viewport support isn't in scope today */
+}
+
+/* ---------------------------------------------------------------------- */
+/* Overview (dashboard home)                                              */
+/* ---------------------------------------------------------------------- */
+
+.overview-section { margin-bottom: var(--s7); }
+.overview-section h3 {
+  font-size: var(--t-lg);
+  font-weight: 700;
+  margin: 0 0 var(--s4);
+  letter-spacing: -0.01em;
+}
+.overview-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s3) 0;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--t-sm);
+}
+.overview-row:last-child { border-bottom: none; }
+.overview-row-main { color: var(--text); font-weight: 550; }
+.overview-row-meta { color: var(--text-faint); font-size: var(--t-xs); }
+.overview-disclosure {
+  border: 1px solid var(--warning-dim);
+  background: var(--warning-dim);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: var(--s4);
+  font-size: var(--t-sm);
+  line-height: 1.55;
 }
 
 /* ---------------------------------------------------------------------- */

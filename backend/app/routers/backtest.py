@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import random
+import time
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -11,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from .. import backtest_engine as engine
 from .. import config as cfg
-from ..polymarket_client import GammaClient
+from ..polymarket_client import GammaClient, PolymarketAPIError
 
 router = APIRouter(prefix="/api/backtest", tags=["backtest"])
 
@@ -69,7 +70,7 @@ class MarketSelection(BaseModel):
     categories: list[str] = Field(default_factory=list)  # empty = all
     year_min: int = Field(default=2020, ge=2015, le=2035)
     year_max: int = Field(default=datetime.now(timezone.utc).year, ge=2015, le=2035)
-    count: int = Field(default=30, ge=1, le=200)
+    count: int = Field(default=30, ge=1, le=500)
 
 
 # Floor only -- excludes markets with essentially no real trading (a handful
@@ -80,6 +81,22 @@ class MarketSelection(BaseModel):
 # shouldn't, since real trading skews toward the liquid, high-volume markets
 # this app is meant to be used on.
 _MIN_REAL_VOLUME = 500.0
+
+
+def _gamma_call_with_retry(gamma, retries: int = 2, **kwargs) -> list:
+    """gamma.get_resolved_markets(**kwargs), retried a couple more times on
+    top of RateLimitedClient's own 3x-with-backoff -- see the call site in
+    auto_select_markets for why a whole market selection is worth a little
+    extra insurance against one flaky category."""
+    last_error = None
+    for attempt in range(retries + 1):
+        try:
+            return gamma.get_resolved_markets(**kwargs)
+        except PolymarketAPIError as e:
+            last_error = e
+            if attempt < retries:
+                time.sleep(1.5 * (attempt + 1))
+    raise last_error
 
 
 def auto_select_markets(gamma, selection: MarketSelection) -> list[dict]:
@@ -105,8 +122,14 @@ def auto_select_markets(gamma, selection: MarketSelection) -> list[dict]:
         # Top-by-volume (the big, liquid markets) + a broad ascending sweep
         # (smaller-but-real markets, floored to skip dust) -- combining both
         # is what gives genuine size diversity instead of leaning either way.
-        top = gamma.get_resolved_markets(limit=100, order="volumeNum", ascending=False, tag_id=tag_id, **date_kwargs)
-        small = gamma.get_resolved_markets(limit=200, order="volumeNum", ascending=True, tag_id=tag_id, **date_kwargs)
+        # A whole market-selection call makes up to 16 of these back to back
+        # (2 per category); Gamma has been observed 500-ing intermittently
+        # under that burst even though the exact same call in isolation
+        # succeeds -- RateLimitedClient already retries 3x on a 5xx, but a
+        # short category-level retry on top of that is cheap insurance
+        # against one bad category losing the whole selection.
+        top = _gamma_call_with_retry(gamma, limit=100, order="volumeNum", ascending=False, tag_id=tag_id, **date_kwargs)
+        small = _gamma_call_with_retry(gamma, limit=200, order="volumeNum", ascending=True, tag_id=tag_id, **date_kwargs)
 
         by_year: dict = {}
         for m in top + small:
@@ -222,7 +245,7 @@ class RunRequest(BaseModel):
     strategy: str = Field(pattern="^(smart_money|insider)$")
     # Exactly one of these two: condition_ids for "I picked these markets
     # myself", market_selection for "pick a spread of markets for me".
-    condition_ids: Optional[list[str]] = Field(default=None, max_length=200)
+    condition_ids: Optional[list[str]] = Field(default=None, max_length=500)
     market_selection: Optional[MarketSelection] = None
     stake_usd: float = Field(default=100.0, gt=0)
     min_conviction: Optional[float] = Field(default=None, ge=0, le=100)
@@ -370,7 +393,7 @@ def get_run(run_id: str):
 
 class SearchRequest(BaseModel):
     strategy: str = Field(pattern="^(smart_money|insider)$")
-    condition_ids: Optional[list[str]] = Field(default=None, max_length=200)
+    condition_ids: Optional[list[str]] = Field(default=None, max_length=500)
     market_selection: Optional[MarketSelection] = None
     # Fraction of the selected markets held out as TEST -- never touched by
     # any of the n_iterations tuning runs, only by the one final evaluation

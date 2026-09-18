@@ -1,77 +1,83 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MarketList from "./pages/MarketList";
 import MarketDetail from "./pages/MarketDetail";
 import InsidersPage from "./pages/InsidersPage";
 import BacktestPage from "./pages/BacktestPage";
+import OverviewPage from "./pages/OverviewPage";
+import Sidebar from "./components/Sidebar";
+import TopBar from "./components/TopBar";
 import Disclaimer from "./components/Disclaimer";
 import "./App.css";
 
-const TABS = ["markets", "insiders", "backtest"];
+const TABS = ["overview", "markets", "insiders", "backtest"];
 
-function tabFromUrl() {
-  const t = new URLSearchParams(window.location.search).get("tab");
-  return TABS.includes(t) ? t : "markets";
+function stateFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const t = params.get("tab");
+  return {
+    tab: TABS.includes(t) ? t : "overview",
+    conditionId: params.get("market") || null,
+  };
 }
 
 export default function App() {
-  const [conditionId, setConditionId] = useState(
-    () => new URLSearchParams(window.location.search).get("market") || null
-  );
-  const [tab, setTab] = useState(tabFromUrl);
+  const [{ tab, conditionId }, setUrlState] = useState(stateFromUrl);
+
+  // The old version only ever pushed history entries, never listened for the
+  // browser's own back/forward navigating them -- so those buttons silently
+  // did nothing. Reading location on every popstate (not just on load) is
+  // the actual fix.
+  useEffect(() => {
+    function onPopState() {
+      setUrlState(stateFromUrl());
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   function openMarket(id) {
-    setConditionId(id);
+    setUrlState((prev) => ({ ...prev, conditionId: id }));
     const url = new URL(window.location);
     url.searchParams.set("market", id);
     window.history.pushState({}, "", url);
   }
 
   function goBack() {
-    setConditionId(null);
+    setUrlState((prev) => ({ ...prev, conditionId: null }));
     const url = new URL(window.location);
     url.searchParams.delete("market");
     window.history.pushState({}, "", url);
   }
 
   function switchTab(next) {
-    setConditionId(null);
-    setTab(next);
+    setUrlState({ tab: next, conditionId: null });
     const url = new URL(window.location);
     url.searchParams.delete("market");
-    if (next === "markets") url.searchParams.delete("tab");
+    if (next === "overview") url.searchParams.delete("tab");
     else url.searchParams.set("tab", next);
     window.history.pushState({}, "", url);
   }
 
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        <h1>Polymarket Smart Money Dashboard</h1>
-        <p className="subtitle">Read-only research tool — not a trading bot.</p>
-        <nav className="app-nav">
-          <button className={tab === "markets" ? "nav-tab active" : "nav-tab"} onClick={() => switchTab("markets")}>
-            Markets
-          </button>
-          <button className={tab === "insiders" ? "nav-tab active" : "nav-tab"} onClick={() => switchTab("insiders")}>
-            Insiders
-          </button>
-          <button className={tab === "backtest" ? "nav-tab active" : "nav-tab"} onClick={() => switchTab("backtest")}>
-            Backtest
-          </button>
-        </nav>
-      </header>
-      <main>
-        {conditionId ? (
-          <MarketDetail key={conditionId} conditionId={conditionId} onBack={goBack} />
-        ) : tab === "insiders" ? (
-          <InsidersPage onOpenMarket={openMarket} />
-        ) : tab === "backtest" ? (
-          <BacktestPage />
-        ) : (
-          <MarketList onOpenMarket={openMarket} />
-        )}
-      </main>
-      <Disclaimer />
+    <div className="shell">
+      <Sidebar tab={tab} onSwitch={switchTab} />
+      <div className="shell-main">
+        <TopBar />
+        <div className="shell-content">
+          {conditionId ? (
+            <MarketDetail key={conditionId} conditionId={conditionId} onBack={goBack} />
+          ) : tab === "insiders" ? (
+            <InsidersPage onOpenMarket={openMarket} />
+          ) : tab === "backtest" ? (
+            <BacktestPage />
+          ) : tab === "markets" ? (
+            <MarketList onOpenMarket={openMarket} />
+          ) : (
+            <OverviewPage onOpenMarket={openMarket} onSwitchTab={switchTab} />
+          )}
+          <Disclaimer />
+        </div>
+      </div>
     </div>
   );
 }

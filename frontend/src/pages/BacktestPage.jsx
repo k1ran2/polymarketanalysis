@@ -549,7 +549,7 @@ export default function BacktestPage() {
               <label>
                 How many markets:
                 <input
-                  type="number" min="1" max="200" value={autoCount}
+                  type="number" min="1" max="500" value={autoCount}
                   onChange={(e) => setAutoCount(e.target.value)}
                   style={{ width: 64 }}
                 />
