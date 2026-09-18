@@ -13,9 +13,17 @@ app = FastAPI(
     version="0.1.0-phase1",
 )
 
+# Pinned to the actual Vite dev origins (default port + a couple of
+# increments Vite falls back to if 5173 is taken), not "*" -- see
+# app.local_auth's module docstring for why this alone still isn't enough
+# once trading endpoints exist, and what the second layer is.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Phase 1: local dev only
+    allow_origins=[
+        "http://localhost:5173", "http://127.0.0.1:5173",
+        "http://localhost:5174", "http://127.0.0.1:5174",
+        "http://localhost:5175", "http://127.0.0.1:5175",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -37,6 +45,17 @@ def on_startup():
     poller.start()
     from . import backtest_engine
     backtest_engine.reconcile_orphaned_runs()
+
+    from .local_auth import get_or_create_local_token
+    token = get_or_create_local_token()
+    print(
+        "\n"
+        "==================================================================\n"
+        "Local access token (paste into the frontend's Settings page once\n"
+        "trading is enabled -- required for /api/trading/* routes only):\n"
+        f"  {token}\n"
+        "==================================================================\n"
+    )
 
 
 @app.on_event("shutdown")
