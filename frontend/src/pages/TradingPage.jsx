@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
-  fetchTradingSettings, fetchTradingSignals, fetchTradingStatus, fetchTradingPerformance, fetchTrades,
+  connectCredentials, disconnectCredentials, fetchCredentialsStatus, fetchTradingSettings, fetchTradingSignals,
+  fetchTradingStatus, fetchTradingPerformance, fetchTrades,
   getLocalToken, pauseTrading, resumeTrading, saveTradingSettings, scanTradingNow, setLocalToken,
 } from "../api";
 import { timeAgo } from "../format";
@@ -35,12 +36,19 @@ export default function TradingPage() {
   const [error, setError] = useState(null);
   const [scanning, setScanning] = useState(false);
 
+  const [credStatus, setCredStatus] = useState(null);
+  const [showConnect, setShowConnect] = useState(false);
+  const [privateKeyInput, setPrivateKeyInput] = useState("");
+  const [funderInput, setFunderInput] = useState("");
+  const [connecting, setConnecting] = useState(false);
+
   function loadAll() {
     fetchTradingStatus().then(setStatus).catch((e) => setError(e.message));
     fetchTradingSettings().then(setSettings).catch(() => {});
     fetchTradingPerformance().then(setPerformance).catch(() => {});
     fetchTrades({ limit: 20 }).then((d) => setTrades(d.trades)).catch(() => {});
     fetchTradingSignals(20).then((d) => setSignals(d.signals)).catch(() => {});
+    fetchCredentialsStatus().then(setCredStatus).catch(() => {});
   }
 
   useEffect(() => {
@@ -70,6 +78,36 @@ export default function TradingPage() {
       if (status?.enabled) await pauseTrading();
       else await resumeTrading();
       loadAll();
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function handleConnect() {
+    setError(null);
+    setConnecting(true);
+    try {
+      const result = await connectCredentials({
+        private_key: privateKeyInput.trim(),
+        funder_address: funderInput.trim() || null,
+      });
+      setCredStatus({ configured: true, ...result });
+      setPrivateKeyInput("");
+      setFunderInput("");
+      setShowConnect(false);
+      loadAll();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    setError(null);
+    try {
+      await disconnectCredentials();
+      setCredStatus({ configured: false });
     } catch (e) {
       setError(e.message);
     }
@@ -126,10 +164,58 @@ export default function TradingPage() {
       </div>
 
       <div className="overview-disclosure" style={{ marginBottom: 20 }}>
-        <strong>Mock mode.</strong> No exchange credentials are connected — every "trade" below is
-        simulated (a fabricated fill, nothing sent to Polymarket). This lets you watch the bot's
-        real decisions against real live markets before ever connecting real money.
+        <strong>Mock mode.</strong> Every "trade" below is simulated (a fabricated fill, nothing sent
+        to Polymarket) — this is true whether or not a wallet is connected below, since there's no
+        order-signing code in this app yet. Connecting a wallet stores your key; it doesn't turn on
+        real trading by itself.
       </div>
+
+      <section>
+        <h3>Wallet</h3>
+        {credStatus?.configured ? (
+          <div className="insiders-controls" style={{ flexWrap: "wrap" }}>
+            <span>Connected: <code>{credStatus.signer_address}</code></span>
+            <button className="kill-switch" onClick={handleDisconnect}>Disconnect</button>
+          </div>
+        ) : showConnect ? (
+          <div className="insiders-market-stats">
+            <p className="chart-caption" style={{ marginTop: 0 }}>
+              <strong>Use a separate wallet for this bot.</strong> Your key is stored encrypted on this
+              machine so the bot can sign orders while you're away — that protects against a lost laptop
+              or a copied file, not malware actively running on a machine you're using. Create a new
+              wallet, fund it with only what you'd accept losing entirely, and paste <em>that</em> wallet's
+              key here. Never paste your main wallet's key, and never paste a private key anywhere except
+              this page.
+            </p>
+            <div className="insiders-controls" style={{ flexWrap: "wrap" }}>
+              <label>
+                Private key:
+                <input
+                  type="password" placeholder="0x…" value={privateKeyInput}
+                  onChange={(e) => setPrivateKeyInput(e.target.value)}
+                  style={{ minWidth: 320 }}
+                />
+              </label>
+              <label title="Only needed for a Polymarket proxy wallet or Gnosis Safe -- leave blank for a plain wallet">
+                Funder address (optional):
+                <input
+                  type="text" placeholder="0x… (leave blank for a plain wallet)" value={funderInput}
+                  onChange={(e) => setFunderInput(e.target.value)}
+                  style={{ minWidth: 280 }}
+                />
+              </label>
+            </div>
+            <div className="insiders-controls" style={{ marginTop: 10 }}>
+              <button className="btn-primary" onClick={handleConnect} disabled={connecting || !privateKeyInput.trim()}>
+                {connecting ? "Connecting…" : "Connect wallet"}
+              </button>
+              <button className="back-link" onClick={() => setShowConnect(false)}>Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <button className="btn-primary" onClick={() => setShowConnect(true)}>Connect wallet</button>
+        )}
+      </section>
 
       {error && <div className="error">Error: {error}</div>}
 

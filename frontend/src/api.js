@@ -203,3 +203,19 @@ export function logManualTrade(body) {
 export function fetchTradingPerformance() {
   return tradingGet(`/api/trading/performance`);
 }
+
+export function fetchCredentialsStatus() {
+  return tradingGet(`/api/trading/credentials`);
+}
+
+export function connectCredentials(body) {
+  return tradingRequest(`/api/trading/credentials`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export function disconnectCredentials() {
+  return tradingRequest(`/api/trading/credentials`, { method: "DELETE" });
+}
