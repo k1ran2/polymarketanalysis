@@ -1,86 +1,58 @@
 import { useEffect, useState } from "react";
-import MarketList from "./pages/MarketList";
-import MarketDetail from "./pages/MarketDetail";
-import InsidersPage from "./pages/InsidersPage";
-import BacktestPage from "./pages/BacktestPage";
-import OverviewPage from "./pages/OverviewPage";
-import TradingPage from "./pages/TradingPage";
-import Sidebar from "./components/Sidebar";
-import TopBar from "./components/TopBar";
-import Disclaimer from "./components/Disclaimer";
+import Lab from "./pages/Lab";
+import Overview from "./pages/Overview";
+import Scan from "./pages/Scan";
+import Traders from "./pages/Traders";
 import "./App.css";
 
-const TABS = ["overview", "markets", "insiders", "backtest", "trading"];
+const PAGES = [
+  { id: "overview", label: "Overview", component: Overview },
+  { id: "lab", label: "Strategy lab", component: Lab },
+  { id: "scan", label: "Pattern scan", component: Scan },
+  { id: "traders", label: "Traders", component: Traders },
+];
 
-function stateFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const t = params.get("tab");
-  return {
-    tab: TABS.includes(t) ? t : "overview",
-    conditionId: params.get("market") || null,
-  };
+function pageFromUrl() {
+  const id = new URLSearchParams(window.location.search).get("page");
+  return PAGES.some((p) => p.id === id) ? id : "overview";
 }
 
 export default function App() {
-  const [{ tab, conditionId }, setUrlState] = useState(stateFromUrl);
+  const [page, setPage] = useState(pageFromUrl);
 
-  // The old version only ever pushed history entries, never listened for the
-  // browser's own back/forward navigating them -- so those buttons silently
-  // did nothing. Reading location on every popstate (not just on load) is
-  // the actual fix.
   useEffect(() => {
-    function onPopState() {
-      setUrlState(stateFromUrl());
-    }
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
+    const onPop = () => setPage(pageFromUrl());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  function openMarket(id) {
-    setUrlState((prev) => ({ ...prev, conditionId: id }));
+  function go(id) {
     const url = new URL(window.location);
-    url.searchParams.set("market", id);
+    if (id === "overview") url.searchParams.delete("page");
+    else url.searchParams.set("page", id);
     window.history.pushState({}, "", url);
+    setPage(id);
   }
 
-  function goBack() {
-    setUrlState((prev) => ({ ...prev, conditionId: null }));
-    const url = new URL(window.location);
-    url.searchParams.delete("market");
-    window.history.pushState({}, "", url);
-  }
-
-  function switchTab(next) {
-    setUrlState({ tab: next, conditionId: null });
-    const url = new URL(window.location);
-    url.searchParams.delete("market");
-    if (next === "overview") url.searchParams.delete("tab");
-    else url.searchParams.set("tab", next);
-    window.history.pushState({}, "", url);
-  }
+  const Current = PAGES.find((p) => p.id === page).component;
 
   return (
     <div className="shell">
-      <Sidebar tab={tab} onSwitch={switchTab} />
-      <div className="shell-main">
-        <TopBar />
-        <div className="shell-content">
-          {conditionId ? (
-            <MarketDetail key={conditionId} conditionId={conditionId} onBack={goBack} />
-          ) : tab === "insiders" ? (
-            <InsidersPage onOpenMarket={openMarket} />
-          ) : tab === "backtest" ? (
-            <BacktestPage />
-          ) : tab === "trading" ? (
-            <TradingPage />
-          ) : tab === "markets" ? (
-            <MarketList onOpenMarket={openMarket} />
-          ) : (
-            <OverviewPage onOpenMarket={openMarket} onSwitchTab={switchTab} />
-          )}
-          <Disclaimer />
+      <nav className="sidebar">
+        <div className="brand">
+          Polymarket Research
+          <span>Find and test strategies</span>
         </div>
-      </div>
+        {PAGES.map((p) => (
+          <button key={p.id} className={`nav-item ${p.id === page ? "active" : ""}`} onClick={() => go(p.id)}>
+            {p.label}
+          </button>
+        ))}
+        <div className="sidebar-foot">Research only. Not financial advice.</div>
+      </nav>
+      <main className="main">
+        <Current />
+      </main>
     </div>
   );
 }

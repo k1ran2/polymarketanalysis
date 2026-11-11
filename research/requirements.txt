@@ -1,0 +1,8 @@
+numpy<2.1
+pandas<2.4
+pyarrow
+duckdb
+httpx
+fastapi
+uvicorn[standard]
+pytest
