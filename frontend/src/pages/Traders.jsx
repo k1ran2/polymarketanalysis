@@ -15,7 +15,7 @@ export default function Traders() {
       <LoadState state={state} />
       {d && (
         <>
-          <div className="grid cols-2">
+          <div>
             <div className="card">
               <h2>Does past skill carry forward?</h2>
               <p className="sub">
@@ -36,32 +36,33 @@ export default function Traders() {
                 ]}
               />
             </div>
+          </div>
+
             <div className="card">
-              <h2>Copying them</h2>
-              <p className="sub">
-                Buy the same side shortly after a qualifying trader makes a large purchase. Compared with copying
-                every large purchase regardless of skill.
-              </p>
-              <DataTable
-                rows={d.copy.map((c) => ({
-                  label: c.label,
-                  train: c.train.roi_pct,
-                  valid: c.validation.roi_pct,
-                  lo: c.validation.roi_lo,
-                  events: c.validation.n_events,
-                  v: verdict(c.train, c.validation),
-                }))}
-                columns={[
-                  { key: "label", label: "Who is copied" },
-                  { key: "train", label: "Train", num: true, render: (v) => <span className={fmt.sign(v)}>{fmt.pct(v)}</span> },
-                  { key: "valid", label: "Unseen", num: true, render: (v) => <span className={fmt.sign(v)}>{fmt.pct(v)}</span> },
-                  { key: "lo", label: "Low end", num: true, render: (v) => fmt.pct(v) },
-                  { key: "events", label: "Events", num: true, render: (v) => fmt.int(v) },
-                  { key: "v", label: "Verdict", render: (v) => <Badge kind={v.kind}>{v.label}</Badge> },
-                ]}
-              />
-              <p className="note" style={{ marginTop: 10 }}>{d.copy_note}</p>
-            </div>
+            <h2>Copying them</h2>
+            <p className="sub">
+              Buy the same side shortly after a qualifying trader makes a large purchase. Compared with copying
+              every large purchase regardless of skill.
+            </p>
+            <DataTable
+              rows={d.copy.map((c) => ({
+                label: c.label,
+                train: c.train.roi_pct,
+                valid: c.validation.roi_pct,
+                lo: c.validation.roi_lo,
+                events: c.validation.n_events,
+                v: verdict(c.train, c.validation),
+              }))}
+              columns={[
+                { key: "label", label: "Who is copied" },
+                { key: "train", label: "Train", num: true, render: (v) => <span className={fmt.sign(v)}>{fmt.pct(v)}</span> },
+                { key: "valid", label: "Unseen", num: true, render: (v) => <span className={fmt.sign(v)}>{fmt.pct(v)}</span> },
+                { key: "lo", label: "Low end", num: true, render: (v) => fmt.pct(v) },
+                { key: "events", label: "Events", num: true, render: (v) => fmt.int(v) },
+                { key: "v", label: "Verdict", render: (v) => <Badge kind={v.kind}>{v.label}</Badge> },
+              ]}
+            />
+            <p className="note" style={{ marginTop: 10 }}>{d.copy_note}</p>
           </div>
 
           <div className="card">

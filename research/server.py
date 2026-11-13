@@ -26,6 +26,14 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+def _warm():
+    """Build the data panel in the background so the first lab run is not the slow one."""
+    import threading
+    from . import panel
+    threading.Thread(target=panel.build, daemon=True).start()
+
+
 def _result(name: str):
     path = store.RESULTS_DIR / f"{name}.json"
     if not path.exists():

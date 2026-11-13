@@ -242,3 +242,46 @@ Each step is one or a few commits. Do not start a step until the previous "done 
 7. **External data.** Which markets do you know well (weather, sport, crypto, politics)? That should pick the first target for family 2.
 8. **The cache.** Is the 4.6 GB `dashboard.db` backed up, and may it be treated as disposable once the new store exists?
 9. **Insider-following.** Are you comfortable trading on signs that someone else has inside information? Check the platform rules and your local law before step 13.
+
+## 8. Status after the first build (2026-11-13)
+
+**What changed from the plan.** Polymarket retired Data API v1 (HTTP 410), so the old backend cannot fetch anything. Steps 1–6 were done on the v2 API, which has no 10,000-trade cap. Details are in [research/DATA_NOTES.md](research/DATA_NOTES.md).
+
+| Step | Status |
+|---|---|
+| 0 Freeze | Tagged `dashboard-v1`; work is on branch `research-rebuild`. The old backend is retired by the API change but not yet deleted. |
+| 1 Data facts | Done. |
+| 2 Data store | Done: 488,392 markets listed, prices for a random 58,435, 11.1M fills from 11,997 markets. |
+| 3 Harness | Done: engine, costs, time split, baselines, run log, 8 tests. A backtest takes about 0.5 s. Order-book recorder not started. |
+| 4 Statistical biases | Done. Nothing beats costs. |
+| 5 Full tape and wallet stats | Done from the tape, for markets over $1M and fills of $500 or more. |
+| 6 Copy, fade, insider | Done as a first pass. Nothing beats costs. |
+| 7 Weather | Not started. 30,112 weather markets exist, so there is plenty of data. |
+| 8 Arbitrage | Not started; needs the recorder. |
+| 9–13 | Not started. No strategy has earned a test-period run. The test period (35,839 sampled markets) is untouched. |
+| 11 UI | Done early at your request: Overview, Strategy lab, Pattern scan, Traders. |
+
+**Results (after spread and fees, unseen period):**
+
+| Idea | Result |
+|---|---|
+| Are prices fair? | Yes, within about 1 point at most prices and 3 points near 50c. |
+| Strong favourites, moderate favourites, long shots, late favourites | −1.0% to −6.2%. |
+| Following or fading 12-hour and 2-day moves | −3.3% to −4.7%. |
+| Random side, for comparison | −4.5%. |
+| Pattern scan, 212 rules | 4 passed training, 2 held on unseen data, 0 survived re-pricing at real traded prices (27–40% of their trades were fillable). |
+| Copy proven traders | −1.6% (copying every large buyer: −0.4%). |
+| Copy elite traders | −6.8%. |
+| Copy new wallets making a large first bet | −3.6%. |
+| Bet against consistent losers | +4.6%, likely range −7.8% to +17.3%, so not evidence. |
+| Does trader skill persist? | Weakly: 65% of the top tenth stayed profitable against 54% of the bottom tenth, and the middle groups are near 50%. |
+
+**Three traps the new setup caught:**
+1. Picking markets by final volume made cheap outcomes look 7 points underpriced.
+2. The charted price in thin markets is not a price anyone can buy at.
+3. Wallets that buy sure things at 99.9c after the result is known looked like the best traders until trades above 97c were excluded.
+
+**Where an edge could still be:**
+- **Outside information** (step 7, weather). Everything tested so far uses only prices and trades, which the market already sees.
+- **Providing liquidity instead of taking it.** Proven traders showed about +3% before costs in both periods; costs of about 3.5% erased it. Makers pay no fee and earn the spread. This needs live order-book data to test.
+- **Speed.** Copy tests entered 1 to 10 minutes late on 3-hour or 12-hour price data. Faster signals need minute data, which Polymarket keeps for only about 7 days, so it must be recorded.

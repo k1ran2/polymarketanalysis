@@ -13,7 +13,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from . import engine, panel, scan, store, strategies as st, wallets
+from . import engine, panel, scan, store, strategies as st, verify, wallets
 from .server import equity_curve
 
 warnings.filterwarnings("ignore")
@@ -152,17 +152,24 @@ def overview(cal: dict, strats: list, scan_summary: dict, tr: dict | None) -> di
                          "detail": f"Best was '{best['name']}' at {bs.get('roi_pct', 0):+.1f}% unseen (likely range {bs.get('roi_lo', 0):+.1f}% to {bs.get('roi_hi', 0):+.1f}%).",
                          "status": "bad"})
 
+    confirmed = scan_summary.get("confirmed_real_prices", 0)
     findings.append({
-        "title": f"Pattern scan: {scan_summary['survived_validation']} of {scan_summary['rules_tested']} rules held up on unseen data",
-        "detail": f"{scan_summary['passed_train']} looked profitable in training (about {scan_summary['expected_by_chance_train']} expected by luck alone).",
-        "status": "good" if scan_summary["survived_validation"] > max(1, 3 * scan_summary["expected_by_chance_survivors"]) else "neutral"})
+        "title": f"Pattern scan: {scan_summary['rules_tested']} rules tested, {scan_summary['survived_validation']} held on unseen data, {confirmed} survived real traded prices",
+        "detail": (f"{scan_summary['passed_train']} looked profitable in training (about {scan_summary['expected_by_chance_train']} expected by luck alone). "
+                   "Rules that held were re-priced at what buyers actually paid; in thin markets the charted price is not a price you can buy at."),
+        "status": "good" if confirmed else "bad"})
 
     if tr:
         p = tr["persistence"]
+        top, bottom = p[-1]["future_winners"], p[0]["future_winners"]
+        strong = top - bottom > 0.15
         findings.append({
-            "title": f"Trader skill persists: {p[-1]['future_winners']:.0%} of the most consistent past winners stayed profitable, against {p[0]['future_winners']:.0%} of the worst group",
-            "detail": "Ranked on markets resolved before the cut-off, measured on markets entered after it. Skill here means dollar profit per dollar at risk.",
-            "status": "good" if p[-1]["future_winners"] - p[0]["future_winners"] > 0.15 else "neutral"})
+            "title": (f"Trader skill {'persists' if strong else 'only weakly persists'}: {top:.0%} of the most consistent "
+                      f"past winners stayed profitable, against {bottom:.0%} of the worst group"),
+            "detail": ("Ranked on markets resolved before the cut-off, measured on markets entered after it. Trades made "
+                       "above 97c or below 3c are excluded: including them makes wallets that buy sure things after the "
+                       "result is known look like the best traders."),
+            "status": "good" if strong else "neutral"})
         base = tr["copy"][0]
         for c in tr["copy"][1:]:
             v = _verdict(c["train"], c["validation"])
@@ -178,7 +185,7 @@ def overview(cal: dict, strats: list, scan_summary: dict, tr: dict | None) -> di
         "status": "neutral"})
 
     n_tested = len(real) + scan_summary["rules_tested"] + (len(tr["copy"]) - 1 if tr else 0)
-    n_survived = len(good) + scan_summary["survived_validation"] + (
+    n_survived = len(good) + scan_summary.get("confirmed_real_prices", 0) + (
         sum(1 for c in tr["copy"][1:] if _verdict(c["train"], c["validation"]) == "good") if tr else 0)
     return {
         "updated_at": int(m["resolved_ts"].max()),
@@ -216,6 +223,19 @@ def main():
     scan_summary = {"rules_tested": n, "passed_train": passed, "survived_validation": int(rules["survived"].sum()),
                     "expected_by_chance_train": round(0.025 * n, 1), "expected_by_chance_survivors": round(0.025 * passed, 1),
                     "seconds": round(time.time() - t1, 1)}
+    _write("scan", json.loads(rules.to_json(orient="records")))
+    # Anything that held on unseen data gets re-priced at what buyers really paid.
+    rules["real_roi"], rules["fillable"], rules["confirmed"] = np.nan, np.nan, False
+    if scan_summary["survived_validation"]:
+        print("verifying survivors at real traded prices...", flush=True)
+        checks = verify.survivors()
+        _write("verify", checks)
+        for v in checks:
+            hit = (rules["price"] == v["price"]) & (rules["condition"] == v["condition"])
+            rules.loc[hit, "real_roi"] = v["validation"]["real"].get("roi_pct", np.nan)
+            rules.loc[hit, "fillable"] = v["validation"]["fillable_share"]
+            rules.loc[hit, "confirmed"] = v["confirmed"]
+    scan_summary["confirmed_real_prices"] = int(rules["confirmed"].sum())
     _write("scan", json.loads(rules.to_json(orient="records")))
     _write("scan_summary", scan_summary)
 

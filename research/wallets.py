@@ -44,7 +44,10 @@ def fills() -> pd.DataFrame:
         "pnl": np.where(buy, size * (payout - price), size * (price - payout)),
         "resolved_ts": resolved,
     })
-    out = out[np.isfinite(out["pnl"]) & (out["ts"] < out["resolved_ts"])]
+    # Fills outside 3c-97c are almost all made after the result is effectively known
+    # (buying a sure thing at 99.9c). They are not bets, and counting them makes
+    # "never loses" wallets look like the most skilled traders.
+    out = out[np.isfinite(out["pnl"]) & (out["ts"] < out["resolved_ts"]) & (out["price"] >= 0.03) & (out["price"] <= 0.97)]
     out["wallet"] = out["wallet"].astype("category")
     out["condition_id"] = out["condition_id"].astype("category")
     return out.reset_index(drop=True)
