@@ -66,6 +66,19 @@ def traders():
     return _result("traders")
 
 
+@app.get("/api/studies")
+def studies():
+    return _result("studies")
+
+
+@app.get("/api/alerts")
+def alerts():
+    from dataclasses import asdict
+    from . import watch
+    return {"profiles": [asdict(p) for p in watch.PROFILES], "alerts": watch.recent_alerts(),
+            "min_fill_usd": watch.MIN_FILL_USD}
+
+
 class LabRequest(BaseModel):
     """One simple rule: buy a side when its price and the market's state are in range."""
     side: str = Field(default="favourite", pattern="^(favourite|underdog|outcome0|outcome1)$")

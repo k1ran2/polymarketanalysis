@@ -20,6 +20,8 @@ export const api = {
   scan: () => request("/api/scan"),
   calibration: () => request("/api/calibration"),
   traders: () => request("/api/traders"),
+  studies: () => request("/api/studies"),
+  alerts: () => request("/api/alerts"),
   runLab: (body) =>
     request("/api/lab/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
 };
@@ -36,6 +38,8 @@ export const fmt = {
   pct: (n, d = 1) => (n == null ? "–" : (n > 0 ? "+" : "") + n.toFixed(d) + "%"),
   pctPlain: (n, d = 1) => (n == null ? "–" : n.toFixed(d) + "%"),
   num: (n, d = 2) => (n == null ? "–" : n.toFixed(d)),
+  dateTime: (ts) =>
+    ts ? new Date(ts * 1000).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "–",
   date: (ts) => (ts ? new Date(ts * 1000).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "–"),
   wallet: (w) => (w ? w.slice(0, 6) + "…" + w.slice(-4) : "–"),
   sign: (n) => (n > 0 ? "pos" : n < 0 ? "neg" : ""),

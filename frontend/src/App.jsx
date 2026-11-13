@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import Alerts from "./pages/Alerts";
+import DeepDives from "./pages/DeepDives";
 import Lab from "./pages/Lab";
 import Overview from "./pages/Overview";
 import Scan from "./pages/Scan";
@@ -10,6 +12,8 @@ const PAGES = [
   { id: "lab", label: "Strategy lab", component: Lab },
   { id: "scan", label: "Pattern scan", component: Scan },
   { id: "traders", label: "Traders", component: Traders },
+  { id: "dives", label: "Deep dives", component: DeepDives },
+  { id: "alerts", label: "Alerts", component: Alerts },
 ];
 
 function pageFromUrl() {
